@@ -16,11 +16,11 @@ The following environment variables are supported:
 ## Usage
 MQTT support is currently experimental. IoT Hub support can be leveraged by calling "Direct Methods". The currently supported functionality is:
 
-###Method "Write"
+### Method "Write"
 Writes a UANode on an OPC UA server that must be in the UA Commander's network, example parameters:
 ```json
 {
-	"Endpoint": "opc.tcp://myopcserver.contoso/UA/",
+    "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
     "NodeId": "http://opcfoundation.org/UA/Station/;i=123",
     "ValueToWrite": {
         "Type": 6,
@@ -30,11 +30,11 @@ Writes a UANode on an OPC UA server that must be in the UA Commander's network, 
 ```
 The Body is the value and the Type number can be looked-up in the table [here](https://reference.opcfoundation.org/v104/Core/docs/Part6/5.1.2/).
 
-###Method "Command"
+### Method "Command"
 Executes a command on an OPC UA server that must be in the UA Commander's network, example parameters:
 ```json
 {
-	"Endpoint": "opc.tcp://myopcserver.contoso/UA/",
+    "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
     "MethodNodeId": "http://opcfoundation.org/UA/Station/;i=123",
     "ParentNodeId": "http://opcfoundation.org/UA/Station/;i=120",
     "Arguments": [
