@@ -30,7 +30,6 @@ namespace UACommander
             };
 
             app.LoadApplicationConfiguration(false).GetAwaiter().GetResult();
-
             app.CheckApplicationInstanceCertificate(false, 0).GetAwaiter().GetResult();
 
             // create OPC UA cert validator
@@ -54,7 +53,6 @@ namespace UACommander
             // register our methods
             await methodHandler.RegisterMethodsAsync(Environment.GetEnvironmentVariable("CONNECTION_STRING")).ConfigureAwait(false);
 
-            // wait forever if asked to do so
             Log.Logger.Information("UA Commander is running.");
             await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
         }
@@ -68,9 +66,6 @@ namespace UACommander
             }
         }
 
-        /// <summary>
-        /// Initialize logging.
-        /// </summary>
         private static void InitLogging(string pathToLogFile)
         {
             LoggerConfiguration loggerConfiguration = new LoggerConfiguration();
