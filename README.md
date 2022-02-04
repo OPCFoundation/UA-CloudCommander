@@ -1,5 +1,5 @@
 # UACommander
-An OPC UA industrial gateway Docker container for executing commands and writes on on-prem OPC UA servers.
+An OPC UA industrial gateway Docker container for executing commands and writes on on-prem OPC UA servers from the cloud via either an MQTT broker or from Azure IoT Hub.
 
 ## Configuration
 The following environment variables are supported:
