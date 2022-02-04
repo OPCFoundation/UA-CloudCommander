@@ -5,7 +5,7 @@ An OPC UA industrial gateway Docker container for executing commands and writes 
 The following environment variables are supported:
 * METHOD_HANDLER - Method handler to use: "IoTHubMethodHandler" (default) or "MQTTClientMethodHandler" (optional)
 * CONNECTION_STRING - Connection string to the method handler
-* RUN_AS_DEVICE - Flag, if defined, to indicate if UA Commander should run as an IoT Hub device instead of an IoT Edge module
+* RUN_AS_DEVICE - Flag, if defined, to indicate that UA Commander should run as an Azure IoT Hub device instead of an Azure IoT Edge module
 * WEB_PROXY_URL - Url of a web proxy server to use
 * LOG_FILE_PATH - Path to use for the log file
 * MQTT_USERNAME - Username for the optional MQTT broker
