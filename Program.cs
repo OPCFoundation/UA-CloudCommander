@@ -29,8 +29,8 @@ namespace UACommander
                 ConfigSectionName = "UA.Commander"
             };
 
-            app.LoadApplicationConfiguration(false).GetAwaiter().GetResult();
-            app.CheckApplicationInstanceCertificate(false, 0).GetAwaiter().GetResult();
+            await app.LoadApplicationConfiguration(false).ConfigureAwait(false);
+            await app.CheckApplicationInstanceCertificate(false, 0).ConfigureAwait(false);
 
             // create OPC UA cert validator
             app.ApplicationConfiguration.CertificateValidator = new CertificateValidator();

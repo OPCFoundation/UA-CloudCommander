@@ -40,13 +40,13 @@ namespace UACommander
             {
                 if (_deviceClient != null)
                 {
-                    _deviceClient.CloseAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                    _deviceClient.CloseAsync().GetAwaiter().GetResult();
                     _deviceClient.Dispose();
                 }
 
                 if (_moduleClient != null)
                 {
-                    _moduleClient.CloseAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                    _moduleClient.CloseAsync().GetAwaiter().GetResult();
                     _moduleClient.Dispose();
                 }
             }
