@@ -14,6 +14,12 @@ The following environment variables are supported:
 * UA_PASSWORD - Optional password for the OPC UA server to connect to
 
 ## Usage
+Execute:
+```
+docker run ghcr.io/barnstee/uacommander:main
+```
+from a Docker-enabled PC or Linux box.
+Alternatively, deploy it as an Azure IoT Edge module from the Azure portal.
 MQTT support is currently experimental. IoT Hub support can be leveraged by calling "Direct Methods". The currently supported functionality is:
 
 ### Method "Write"
