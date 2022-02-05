@@ -28,9 +28,9 @@ namespace UACommander
             // create MQTT client
             string brokerName = Environment.GetEnvironmentVariable("MQTT_BROKERNAME");
             string clientName = Environment.GetEnvironmentVariable("MQTT_CLIENTNAME");
+            string userName = Environment.GetEnvironmentVariable("MQTT_USERNAME");
             string password = Environment.GetEnvironmentVariable("MQTT_PASSWORD");
             string topic = Environment.GetEnvironmentVariable("MQTT_TOPIC");
-            string userName = Environment.GetEnvironmentVariable("MQTT_USERNAME");
             _mqttClient = new MqttClient(brokerName, 8883, true, MqttSslProtocols.TLSv1_2, MQTTBrokerCertificateValidationCallback, null);
 
             if (Environment.GetEnvironmentVariable("CREATE_SAS_PASSWORD") != null)
