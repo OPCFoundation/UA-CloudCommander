@@ -36,7 +36,7 @@ namespace UACommander
             app.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
             app.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OPCUAServerCertificateValidationCallback);
 
-            // subscribe to our topic to receive commands
+            // subscribe to our topic to receive messages from the broker
             MQTTClient methodHandler = new MQTTClient(app.ApplicationConfiguration);
             methodHandler.Subscribe();
 

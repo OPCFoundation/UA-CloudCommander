@@ -45,10 +45,10 @@ namespace UACommander
                 password = "SharedAccessSignature sr=" + HttpUtility.UrlEncode(brokerName + "/devices/" + clientName) + "&sig=" + HttpUtility.UrlEncode(signature) + "&se=" + expiry;
             }
 
-            // register to message received
+            // register publish received callback
             _mqttClient.MqttMsgPublishReceived += MQTTBrokerPublishReceived;
 
-            // subscribe to all methods
+            // subscribe to all our topics
             _mqttClient.Subscribe(new string[] { topic }, new byte[] { MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE });
 
             // connect to MQTT broker
@@ -98,7 +98,7 @@ namespace UACommander
             {
                 Log.Logger.Error(ex, "MQTTBrokerPublishReceived");
 
-                // send to MQTT broker
+                // send error to MQTT broker
                 _mqttClient.Publish(responseTopic + "/500/" + requestID, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(ex.Message)), MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE, false);
             }
         }
