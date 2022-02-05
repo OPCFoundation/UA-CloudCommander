@@ -21,8 +21,8 @@ docker run ghcr.io/barnstee/uacommander:main
 ```
 from a Docker-enabled PC or Linux box.
 Alternatively, deploy it as an Azure IoT Edge module from the Azure portal.
-The supported functionality is:
 
+## Functionality
 ### Method "Read"
 Reads a UANode on an OPC UA server that must be in the UA Commander's network, example parameters:
 ```json
