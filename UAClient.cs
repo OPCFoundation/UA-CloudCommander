@@ -3,6 +3,7 @@ namespace UACommander
 {
     using Opc.Ua;
     using Opc.Ua.Client;
+    using Opc.Ua.Client.ComplexTypes;
     using Serilog;
     using System;
 
@@ -55,6 +56,56 @@ namespace UACommander
             catch (Exception ex)
             {
                 Log.Logger.Error(ex, "Executing OPC UA command failed!");
+                throw ex;
+            }
+            finally
+            {
+                if (session != null)
+                {
+                    if (session.Connected)
+                    {
+                        session.Close();
+                    }
+
+                    session.Dispose();
+                }
+            }
+        }
+
+        public string ReadUAVariable(ApplicationConfiguration appConfiguration, string payload)
+        {
+            Session session = null;
+
+            try
+            {
+                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext());
+
+                string serverEndpoint = decoder.ReadString("Endpoint");
+                session = CreateSession(appConfiguration, serverEndpoint);
+
+                string expandedNodeID = decoder.ReadString("NodeId");
+                ExpandedNodeId nodeID = ExpandedNodeId.Parse(expandedNodeID);
+
+                // read a variable node from the OPC UA server
+                VariableNode node = (VariableNode)session.ReadNode(ExpandedNodeId.ToNodeId(nodeID, session.NamespaceUris));
+
+                // load complex type system
+                ComplexTypeSystem complexTypeSystem = new ComplexTypeSystem(session);
+                ExpandedNodeId nodeTypeId = node.DataType;
+                complexTypeSystem.LoadType(nodeTypeId).GetAwaiter().GetResult();
+
+                // now that we have loaded the (potentionally) complex type, we can read the value
+                DataValue value = session.ReadValue(ExpandedNodeId.ToNodeId(nodeID, session.NamespaceUris));
+                if (StatusCode.IsBad(value.StatusCode))
+                {
+                    throw ServiceResultException.Create(value.StatusCode.Code, "Reading OPC UA node failed!");
+                }
+
+                return value.WrappedValue.ToString();
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error(ex, "Reading OPC UA node failed!");
                 throw ex;
             }
             finally

@@ -23,8 +23,6 @@
 
   <ItemGroup>
     <PackageReference Include="M2MqttDotnetCore" Version="1.1.0" />
-    <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.40.0" />
-    <PackageReference Include="Microsoft.Azure.Devices.Provisioning.Transport.Mqtt" Version="1.17.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua" Version="1.4.367.95" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Client.ComplexTypes" Version="1.4.367.95" />

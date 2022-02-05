@@ -36,22 +36,9 @@ namespace UACommander
             app.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
             app.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OPCUAServerCertificateValidationCallback);
 
-            // create our method handler
-            string methodHandlerString = "IoTHubMethodHandler";
-            if (Environment.GetEnvironmentVariable("METHOD_HANDLER") != null)
-            {
-                methodHandlerString = Environment.GetEnvironmentVariable("METHOD_HANDLER");
-            }
-
-            IMethodHandler methodHandler = null;
-            switch (methodHandlerString)
-            {
-                case "IoTHubMethodHandler": methodHandler = new IoTHubMethodHandler(app.ApplicationConfiguration); break;
-                case "MQTTClientMethodHandler": methodHandler = new MQTTClientMethodHandler(app.ApplicationConfiguration); break;
-            }
-
-            // register our methods
-            await methodHandler.RegisterMethodsAsync(Environment.GetEnvironmentVariable("CONNECTION_STRING")).ConfigureAwait(false);
+            // subscribe to our topic to receive commands
+            MQTTClient methodHandler = new MQTTClient(app.ApplicationConfiguration);
+            methodHandler.Subscribe();
 
             Log.Logger.Information("UA Commander is running.");
             await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
