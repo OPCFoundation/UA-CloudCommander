@@ -29,12 +29,13 @@ namespace UACommander
                 ConfigSectionName = "UA.Commander"
             };
                         
-            // redirect cert store location, if required
+            // redirect cert store location, if required and update cert issuer name
             if (Environment.GetEnvironmentVariable("CERT_STORE_PATH") != null)
             {
                 string certStorePath = Environment.GetEnvironmentVariable("CERT_STORE_PATH");
                 string fileContent = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "UA.Commander.Config.xml"));
                 fileContent = fileContent.Replace(">%LocalApplicationData%/UACommander/pki/trusted<", ">" + certStorePath + "<");
+                fileContent = fileContent.Replace("CN=UACommander", "CN=" + Utils.GetHostName());
                 File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "UA.Commander.Config.xml"), fileContent);
             }
 
