@@ -11,7 +11,7 @@ namespace UACommander
 
     public class Program
     {
-        public static async Task Main()
+        public static async Task Main(string[] args)
         {
             // setup logging
             string pathToLogFile = Directory.GetCurrentDirectory();
@@ -22,9 +22,14 @@ namespace UACommander
             InitLogging(pathToLogFile);
 
             // create OPC UA client app
+            string appName = "UACommander";
+            if (args.Length > 0)
+            {
+                appName = args[0];
+            }
             ApplicationInstance app = new ApplicationInstance
             {
-                ApplicationName = "UACommander",
+                ApplicationName = appName,
                 ApplicationType = ApplicationType.Client,
                 ConfigSectionName = "UA.Commander"
             };
@@ -35,7 +40,7 @@ namespace UACommander
                 string certStorePath = Environment.GetEnvironmentVariable("CERT_STORE_PATH");
                 string fileContent = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "UA.Commander.Config.xml"));
                 fileContent = fileContent.Replace(">%LocalApplicationData%/UACommander/pki/trusted<", ">" + certStorePath + "<");
-                fileContent = fileContent.Replace("CN=UACommander", "CN=" + Utils.GetHostName());
+                fileContent = fileContent.Replace("CN=UACommander", "CN=" + app.ApplicationName);
                 File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "UA.Commander.Config.xml"), fileContent);
             }
 
