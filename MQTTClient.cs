@@ -66,7 +66,7 @@ namespace UACommander
 
         private void ConnectionClosed(object sender, EventArgs e)
         {
-            Log.Logger.Warning("Disconnected from Broker, reason: " + e.ToString());
+            Log.Logger.Warning("Disconnected from Broker.");
 
             // simply reconnect again
             Connect();
