@@ -28,17 +28,17 @@ namespace UACommander
                 ApplicationType = ApplicationType.Client,
                 ConfigSectionName = "UA.Commander"
             };
-
-            await app.LoadApplicationConfiguration(false).ConfigureAwait(false);
-
+                        
             // redirect cert store location, if required
-            string pathToCertFile = app.ApplicationConfiguration.SecurityConfiguration.TrustedPeerCertificates.StorePath;
             if (Environment.GetEnvironmentVariable("CERT_STORE_PATH") != null)
             {
-                pathToLogFile = Environment.GetEnvironmentVariable("CERT_STORE_PATH");
+                string certStorePath = Environment.GetEnvironmentVariable("CERT_STORE_PATH");
+                string fileContent = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "UA.Commander.Config.xml"));
+                fileContent = fileContent.Replace(">%LocalApplicationData%/UACommander/pki/trusted<", ">" + certStorePath + "<");
+                File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "UA.Commander.Config.xml"), fileContent);
             }
-            app.ApplicationConfiguration.SecurityConfiguration.TrustedPeerCertificates.StorePath = pathToLogFile;
 
+            await app.LoadApplicationConfiguration(false).ConfigureAwait(false);
             await app.CheckApplicationInstanceCertificate(false, 0).ConfigureAwait(false);
 
             // create OPC UA cert validator
