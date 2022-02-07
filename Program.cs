@@ -30,6 +30,15 @@ namespace UACommander
             };
 
             await app.LoadApplicationConfiguration(false).ConfigureAwait(false);
+
+            // redirect cert store location, if required
+            string pathToCertFile = app.ApplicationConfiguration.SecurityConfiguration.TrustedPeerCertificates.StorePath;
+            if (Environment.GetEnvironmentVariable("CERT_STORE_PATH") != null)
+            {
+                pathToLogFile = Environment.GetEnvironmentVariable("CERT_STORE_PATH");
+            }
+            app.ApplicationConfiguration.SecurityConfiguration.TrustedPeerCertificates.StorePath = pathToLogFile;
+
             await app.CheckApplicationInstanceCertificate(false, 0).ConfigureAwait(false);
 
             // create OPC UA cert validator
@@ -62,6 +71,10 @@ namespace UACommander
 #else
             loggerConfiguration.MinimumLevel.Information();
 #endif
+            if (!Directory.Exists(pathToLogFile))
+            {
+                Directory.CreateDirectory(pathToLogFile);
+            }
             
             // set logging sinks
             loggerConfiguration.WriteTo.Console();

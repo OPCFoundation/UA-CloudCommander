@@ -3,7 +3,8 @@ An OPC UA industrial gateway Docker container for executing commands, reads and 
 
 ## Configuration
 The following environment variables are supported:
-* LOG_FILE_PATH - Path to use for the log file
+* LOG_FILE_PATH - Path to use for the log file to use
+* CERT_STORE_PATH - Path to OPC UA certificate store to use
 * MQTT_BROKERNAME - MQTT broker name to connect to
 * MQTT_CLIENTNAME - MQTT client name, for example the device ID UACommander is running on. If running as an Azure IoT Edge module, this is <deviceID>/<moduleID>
 * MQTT_TOPIC - Topic to subscribe to. "Read", "Write" and "Command" must be sub-topics of this topic, for IoT Hub, this is $iothub/methods/POST/#
