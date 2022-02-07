@@ -36,9 +36,9 @@ namespace UACommander
             app.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
             app.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OPCUAServerCertificateValidationCallback);
 
-            // subscribe to our topic to receive messages from the broker
+            // connect to the MQTT broker
             MQTTClient methodHandler = new MQTTClient(app.ApplicationConfiguration);
-            methodHandler.Subscribe();
+            methodHandler.Connect();
 
             Log.Logger.Information("UA Commander is running.");
             await Task.Delay(Timeout.Infinite).ConfigureAwait(false);

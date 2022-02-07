@@ -15,15 +15,15 @@ namespace UACommander
 
     public class MQTTClient
     {
-        private static ApplicationConfiguration _appConfig = null;
-        private static MqttClient _mqttClient = null;
+        private ApplicationConfiguration _appConfig = null;
+        private MqttClient _mqttClient = null;
 
         public MQTTClient(ApplicationConfiguration appConfig)
         {
             _appConfig = appConfig;
         }
 
-        public void Subscribe()
+        public void Connect()
         {
             // create MQTT client
             string brokerName = Environment.GetEnvironmentVariable("MQTT_BROKERNAME");
@@ -31,7 +31,7 @@ namespace UACommander
             string userName = Environment.GetEnvironmentVariable("MQTT_USERNAME");
             string password = Environment.GetEnvironmentVariable("MQTT_PASSWORD");
             string topic = Environment.GetEnvironmentVariable("MQTT_TOPIC");
-            _mqttClient = new MqttClient(brokerName, 8883, true, MqttSslProtocols.TLSv1_2, MQTTBrokerCertificateValidationCallback, null);
+            _mqttClient = new MqttClient(brokerName, 8883, true, MqttSslProtocols.TLSv1_2, CertificateValidationCallback, null);
 
             if (Environment.GetEnvironmentVariable("CREATE_SAS_PASSWORD") != null)
             {
@@ -45,21 +45,34 @@ namespace UACommander
                 password = "SharedAccessSignature sr=" + HttpUtility.UrlEncode(brokerName + "/devices/" + clientName) + "&sig=" + HttpUtility.UrlEncode(signature) + "&se=" + expiry;
             }
 
-            // register publish received callback
-            _mqttClient.MqttMsgPublishReceived += MQTTBrokerPublishReceived;
-
+            // register publish received and disconnect handler callbacks
+            _mqttClient.MqttMsgPublishReceived += PublishReceived;
+            _mqttClient.ConnectionClosed += ConnectionClosed;
+            
             // subscribe to all our topics
             _mqttClient.Subscribe(new string[] { topic }, new byte[] { MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE });
 
             // connect to MQTT broker
-            byte returnCode = _mqttClient.Connect(clientName, userName, password);
+            byte returnCode = _mqttClient.Connect(clientName, userName, password, false, 5);
             if (returnCode != MqttMsgConnack.CONN_ACCEPTED)
             {
                 Log.Logger.Error("Connection to MQTT broker failed with " + returnCode.ToString() + "!");
             }
+            else
+            {
+                Log.Logger.Information("Connected to MQTT broker.");
+            }
         }
 
-        private static void MQTTBrokerPublishReceived(object sender, MqttMsgPublishEventArgs e)
+        private void ConnectionClosed(object sender, EventArgs e)
+        {
+            Log.Logger.Warning("Disconnected from Broker, reason: " + e.ToString());
+
+            // simply reconnect again
+            Connect();
+        }
+
+        private void PublishReceived(object sender, MqttMsgPublishEventArgs e)
         {
             string requestTopic = Environment.GetEnvironmentVariable("MQTT_TOPIC");
             string responseTopic = Environment.GetEnvironmentVariable("MQTT_RESPONSE_TOPIC");
@@ -103,7 +116,7 @@ namespace UACommander
             }
         }
 
-        private static bool MQTTBrokerCertificateValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        private bool CertificateValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             // always trust the MQTT broker certificate
             return true;
