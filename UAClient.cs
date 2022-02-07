@@ -21,9 +21,23 @@ namespace UACommander
                 session = CreateSession(appConfiguration, serverEndpoint);
 
                 string expandedNodeID = decoder.ReadString("MethodNodeId");
+
+                if (string.IsNullOrEmpty(expandedNodeID))
+                {
+                    Log.Logger.Error("Expanded node ID is not specified!");
+                    throw new ArgumentException("Expanded node ID is not specified!");
+                }
+
                 ExpandedNodeId nodeID = ExpandedNodeId.Parse(expandedNodeID);
 
                 string expandedParentNodeID = decoder.ReadString("ParentNodeId");
+
+                if (string.IsNullOrEmpty(expandedParentNodeID))
+                {
+                    Log.Logger.Error("Expanded parent node ID is not specified!");
+                    throw new ArgumentException("Expanded parent node ID is not specified!");
+                }
+
                 ExpandedNodeId parentNodeID = ExpandedNodeId.Parse(expandedParentNodeID);
 
                 CallMethodRequest request = new CallMethodRequest
@@ -84,6 +98,13 @@ namespace UACommander
                 session = CreateSession(appConfiguration, serverEndpoint);
 
                 string expandedNodeID = decoder.ReadString("NodeId");
+
+                if (string.IsNullOrEmpty(expandedNodeID))
+                {
+                    Log.Logger.Error("Expanded node ID is not specified!");
+                    throw new ArgumentException("Expanded node ID is not specified!");
+                }
+
                 ExpandedNodeId nodeID = ExpandedNodeId.Parse(expandedNodeID);
 
                 // read a variable node from the OPC UA server
@@ -134,6 +155,13 @@ namespace UACommander
                 session = CreateSession(appConfiguration, serverEndpoint);
 
                 string expandedNodeID = decoder.ReadString("NodeId");
+                
+                if (string.IsNullOrEmpty(expandedNodeID))
+                {
+                    Log.Logger.Error("Expanded node ID is not specified!");
+                    throw new ArgumentException("Expanded node ID is not specified!");
+                }
+
                 ExpandedNodeId nodeID = ExpandedNodeId.Parse(expandedNodeID);
                                 
                 WriteValue nodeToWrite = new WriteValue()
@@ -185,6 +213,12 @@ namespace UACommander
 
         private Session CreateSession(ApplicationConfiguration appConfiguration, string serverEndpoint)
         {
+            if (string.IsNullOrEmpty(serverEndpoint))
+            {
+                Log.Logger.Error("Server endpoint is not specified!");
+                throw new ArgumentException("Server endpoint is not specified!");
+            }
+
             // find endpoint on a local OPC UA server
             EndpointDescription endpointDescription = CoreClientUtils.SelectEndpoint(serverEndpoint, true);
             EndpointConfiguration endpointConfiguration = EndpointConfiguration.Create(appConfiguration);

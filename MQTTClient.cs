@@ -66,7 +66,7 @@ namespace UACommander
 
         private void ConnectionClosed(object sender, EventArgs e)
         {
-            Log.Logger.Warning("Disconnected from Broker.");
+            Log.Logger.Warning("Disconnected from MQTT broker.");
 
             // simply reconnect again
             Connect();
