@@ -11,7 +11,7 @@ namespace UACommander
 
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static async Task Main()
         {
             // setup logging
             string pathToLogFile = Directory.GetCurrentDirectory();
@@ -23,9 +23,9 @@ namespace UACommander
 
             // create OPC UA client app
             string appName = "UACommander";
-            if (args.Length > 0)
+            if (Environment.GetEnvironmentVariable("APP_NAME") != null)
             {
-                appName = args[0];
+                appName = Environment.GetEnvironmentVariable("APP_NAME");
             }
             ApplicationInstance app = new ApplicationInstance
             {
