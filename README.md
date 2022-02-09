@@ -2,18 +2,20 @@
 An OPC UA industrial gateway Docker container for executing commands, reads and writes on on-prem OPC UA servers from the cloud via an MQTT broker (including Azure IoT Hub).
 
 ## Configuration
-The following environment variables are supported:
-* LOG_FILE_PATH - Path to use for the log file to use
-* CERT_STORE_PATH - Path to OPC UA certificate store to use
-* MQTT_BROKERNAME - MQTT broker name to connect to
-* MQTT_CLIENTNAME - MQTT client name, for example the device ID UACommander is running on. If running as an Azure IoT Edge module, this is <deviceID>/<moduleID>
-* MQTT_TOPIC - Topic to subscribe to. "Read", "Write" and "Command" must be sub-topics of this topic, for IoT Hub, this is $iothub/methods/POST/#
-* MQTT_RESPONSE_TOPIC - Topic to send responses to, for IoT Hub, this is $iothub/methods/res/{status}/?$rid={request id}
-* MQTT_USERNAME - Username for the MQTT broker, for IoT Hub, this is <bokername>/<clientname>/?api-version=2018-06-30
-* MQTT_PASSWORD - Password for the MQTT broker, for IoT Hub, this is the shared key of the client
-* CREATE_SAS_PASSWORD - Create a SAS token from the password, this is for example needed when using IoT Hub as the MQTT broker
-* UA_USERNAME - Optional username for the OPC UA server to connect to
-* UA_PASSWORD - Optional password for the OPC UA server to connect to
+The following environment variables are REQUIRED:
+* MQTT_BROKERNAME - (required) MQTT broker name to connect to
+* MQTT_CLIENTNAME - (required) MQTT client name, for example the device ID UACommander is running on. If running as an Azure IoT Edge module, this is <deviceID>/<moduleID>
+* MQTT_TOPIC - (required) Topic to subscribe to. "Read", "Write" and "Command" must be sub-topics of this topic, for IoT Hub, this is $iothub/methods/POST/#
+* MQTT_RESPONSE_TOPIC - (required) Topic to send responses to, for IoT Hub, this is $iothub/methods/res/{status}/?$rid={request id}
+* MQTT_USERNAME - (required) Username for the MQTT broker, for IoT Hub, this is <bokername>/<clientname>/?api-version=2018-06-30
+* MQTT_PASSWORD - (required) Password for the MQTT broker, for IoT Hub, this is the shared key of the client
+
+The following environment variables are optional:
+* LOG_FILE_PATH - (optional) Path to use for the log file to use
+* CERT_STORE_PATH - (optional) Path to OPC UA certificate store to use
+* CREATE_SAS_PASSWORD - (optional) Create a SAS token from the password, this is for example needed when using IoT Hub as the MQTT broker
+* UA_USERNAME - (optional) username for the OPC UA server to connect to
+* UA_PASSWORD - (optional) password for the OPC UA server to connect to
 
 ## Usage
 Execute:
