@@ -1,6 +1,6 @@
 # UA Cloud Commander
 
-An OPC UA industrial gateway Docker container for executing commands, reads and writes on on-prem OPC UA servers from the cloud via an MQTT broker (including Azure IoT Hub).
+A cross-platform OPC UA cloud command & control reference implementation leveraging MQTT. It runs in a Docker container and executing commands, reads and writes on on-prem OPC UA servers from the cloud.
 
 ## Configuration
 
