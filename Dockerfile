@@ -1,20 +1,20 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
-FROM mcr.microsoft.com/dotnet/runtime:3.1 AS base
+FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:3.1 AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["UACommander.csproj", "."]
-RUN dotnet restore "./UACommander.csproj"
+COPY ["UACloudCommander.csproj", "."]
+RUN dotnet restore "./UACloudCommander.csproj"
 COPY . .
 WORKDIR "/src/."
-RUN dotnet build "UACommander.csproj" -c Release -o /app/build
+RUN dotnet build "UACloudCommander.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "UACommander.csproj" -c Release -o /app/publish
+RUN dotnet publish "UACloudCommander.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "UACommander.dll"]
+ENTRYPOINT ["dotnet", "UACloudCommander.dll"]

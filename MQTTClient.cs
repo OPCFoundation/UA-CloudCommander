@@ -1,5 +1,5 @@
 ﻿
-namespace UACommander
+namespace Opc.Ua.Cloud.Commander
 {
     using Newtonsoft.Json;
     using Opc.Ua;

@@ -1,4 +1,4 @@
-# UACommander
+# UA Cloud Commander
 
 An OPC UA industrial gateway Docker container for executing commands, reads and writes on on-prem OPC UA servers from the cloud via an MQTT broker (including Azure IoT Hub).
 
@@ -7,7 +7,7 @@ An OPC UA industrial gateway Docker container for executing commands, reads and 
 The following environment variables are REQUIRED:
 
 * MQTT_BROKERNAME - (required) MQTT broker name to connect to
-* MQTT_CLIENTNAME - (required) MQTT client name, for example the device ID UACommander is running on. If running as an Azure IoT Edge module, this is `<deviceID>/<moduleID>`
+* MQTT_CLIENTNAME - (required) MQTT client name, for example the device ID UA Cloud Commander is running on. If running as an Azure IoT Edge module, this is `<deviceID>/<moduleID>`
 * MQTT_TOPIC - (required) Topic to subscribe to. "Read", "Write" and "Command" must be sub-topics of this topic, for IoT Hub, this is `$iothub/methods/POST/#`
 * MQTT_RESPONSE_TOPIC - (required) Topic to send responses to, for IoT Hub, this is `$iothub/methods/res/{status}/?$rid={request id}`
 * MQTT_USERNAME - (required) Username for the MQTT broker, for IoT Hub, this is `<brokername>/<clientname>/?api-version=2018-06-30`
@@ -37,7 +37,7 @@ Alternatively, deploy it as an Azure IoT Edge module from the Azure portal.
 
 ### Sub-Topic "Read"
 
-Reads a UANode on an OPC UA server that must be in the UA Commander's network, example parameters:
+Reads a UANode on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
 
 ```json
 {
@@ -48,7 +48,7 @@ Reads a UANode on an OPC UA server that must be in the UA Commander's network, e
 
 ### Sub-Topic "Write"
 
-Writes a UANode on an OPC UA server that must be in the UA Commander's network, example parameters:
+Writes a UANode on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
 
 ```json
 {
@@ -65,7 +65,7 @@ The Body is the value and the associated Type can be looked-up in the table [her
 
 ### Sub-Topic "Command"
 
-Executes a command on an OPC UA server that must be in the UA Commander's network, example parameters:
+Executes a command on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
 
 ```json
 {

@@ -2,21 +2,21 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>UACommander</AssemblyName>
-    <RootNamespace>UACommander</RootNamespace>
-    <StartupObject>UACommander.Program</StartupObject>
-    <PackageId>UACommander</PackageId>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>UACloudCommander</AssemblyName>
+    <RootNamespace>Opc.Ua.Cloud.Commander</RootNamespace>
+    <StartupObject></StartupObject>
+    <PackageId>UACloudCommander</PackageId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="UA.Commander.Config.xml" />
+    <None Remove="UA.Cloud.Commander.Config.xml" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="UA.Commander.Config.xml">
+    <Content Include="UA.Cloud.Commander.Config.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

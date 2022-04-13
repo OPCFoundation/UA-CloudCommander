@@ -1,42 +1,42 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <ApplicationConfiguration
   xmlns:ua="http://opcfoundation.org/UA/2008/02/Types.xsd"
   xmlns="http://opcfoundation.org/UA/SDK/Configuration.xsd"
   schemaLocation="./Schema/ApplicationConfiguration.xsd"
 >
-  <ApplicationName>UACommander</ApplicationName>
-  <ApplicationUri>urn:localhost:UACommander:microsoft</ApplicationUri>
-  <ProductUri>https://github.com/barnstee/UACommander</ProductUri>
+  <ApplicationName>UACloudCommander</ApplicationName>
+  <ApplicationUri>urn:localhost:UACloudCommander:microsoft</ApplicationUri>
+  <ProductUri>https://github.com/barnstee/UACloudCommander</ProductUri>
   <ApplicationType>Client_1</ApplicationType>
   <SecurityConfiguration>
     <ApplicationCertificate>
       <StoreType>Directory</StoreType>
-      <StorePath>%LocalApplicationData%/UACommander/pki/own</StorePath>
-      <SubjectName>CN=UACommander, C=US, S=Washington, O=Microsoft, DC=localhost</SubjectName>
+      <StorePath>%LocalApplicationData%/UACloudCommander/pki/own</StorePath>
+      <SubjectName>CN=UACloudCommander, C=US, S=Washington, O=Microsoft, DC=localhost</SubjectName>
     </ApplicationCertificate>
     <TrustedIssuerCertificates>
       <StoreType>Directory</StoreType>
-      <StorePath>%LocalApplicationData%/UACommander/pki/issuer</StorePath>
+      <StorePath>%LocalApplicationData%/UACloudCommander/pki/issuer</StorePath>
     </TrustedIssuerCertificates>
     <TrustedPeerCertificates>
       <StoreType>Directory</StoreType>
-      <StorePath>%LocalApplicationData%/UACommander/pki/trusted</StorePath>
+      <StorePath>/Shared/CertificateStores/UA Applications</StorePath>
     </TrustedPeerCertificates>
     <NonceLength>32</NonceLength>
     <RejectedCertificateStore>
       <StoreType>Directory</StoreType>
-      <StorePath>%LocalApplicationData%/UACommander/pki/rejected</StorePath>
+      <StorePath>%LocalApplicationData%/UACloudCommander/pki/rejected</StorePath>
     </RejectedCertificateStore>
     <RejectSHA1SignedCertificates>false</RejectSHA1SignedCertificates>
     <MinimumCertificateKeySize>1024</MinimumCertificateKeySize>
     <SendCertificateChain>false</SendCertificateChain>
     <UserIssuerCertificates>
       <StoreType>Directory</StoreType>
-      <StorePath>%LocalApplicationData%/UACommander/pki/issuerUser</StorePath>
+      <StorePath>%LocalApplicationData%/UACloudCommander/pki/issuerUser</StorePath>
     </UserIssuerCertificates>
     <TrustedUserCertificates>
       <StoreType>Directory</StoreType>
-      <StorePath>%LocalApplicationData%/UACommander/pki/trustedUser</StorePath>
+      <StorePath>%LocalApplicationData%/UACloudCommander/pki/trustedUser</StorePath>
     </TrustedUserCertificates>
 </SecurityConfiguration>
   <TransportConfigurations/>
@@ -58,13 +58,13 @@
       <ua:String>http://{0}/UADiscovery/Default.svc</ua:String>
     </WellKnownDiscoveryUrls>
     <DiscoveryServers/>
-    <EndpointCacheFilePath>Opc.Publisher.Endpoints.xml</EndpointCacheFilePath>
+    <EndpointCacheFilePath>UACloudCommander.Endpoints.xml</EndpointCacheFilePath>
     <MinSubscriptionLifetime>10000</MinSubscriptionLifetime>
   </ClientConfiguration>
   <Extensions/>
   <TraceConfiguration>
-    <!-- The following setting is not used, but a combined UACommander tracelog is written to the configured directory instead -->
-    <OutputFilePath>%CommonApplicationData%\OPC Foundation\Logs\ua.commander.logfile.txt</OutputFilePath>
+    <!-- The following setting is not used, but a combined UACloudCommander tracelog is written to the configured directory instead -->
+    <OutputFilePath>%CommonApplicationData%\OPC Foundation\Logs\UACloudCommander.logfile.txt</OutputFilePath>
     <DeleteOnLoad>true</DeleteOnLoad>
     <!--Error, Trace, StartStop, Security = 0x285 or 645 decimal-->
     <TraceMasks>645</TraceMasks>

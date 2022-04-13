@@ -1,5 +1,5 @@
 
-namespace UACommander
+namespace Opc.Ua.Cloud.Commander
 {
     using Opc.Ua;
     using Opc.Ua.Client;
@@ -70,7 +70,7 @@ namespace UACommander
             catch (Exception ex)
             {
                 Log.Logger.Error(ex, "Executing OPC UA command failed!");
-                throw ex;
+                throw;
             }
             finally
             {
@@ -127,7 +127,7 @@ namespace UACommander
             catch (Exception ex)
             {
                 Log.Logger.Error(ex, "Reading OPC UA node failed!");
-                throw ex;
+                throw;
             }
             finally
             {
@@ -195,7 +195,7 @@ namespace UACommander
             catch (Exception ex)
             {
                 Log.Logger.Error(ex, "Writing OPC UA node failed!");
-                throw ex;
+                throw;
             }
             finally
             {
