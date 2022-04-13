@@ -93,4 +93,4 @@ Again, the Body is the value and the associated Type can be looked-up in the tab
 
 ## Docker Build Status
 
-[![Docker](https://github.com/barnstee/UACommander/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/barnstee/UACommander/actions/workflows/docker-publish.yml)
+[![Docker](https://github.com/barnstee/UA-CloudCommander/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/barnstee/UA-CloudCommander/actions/workflows/docker-publish.yml)
