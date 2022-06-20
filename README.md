@@ -9,7 +9,7 @@ The following environment variables are REQUIRED:
 * MQTT_BROKERNAME - (required) MQTT broker name to connect to
 * MQTT_CLIENTNAME - (required) MQTT client name, for example the device ID UA Cloud Commander is running on. If running as an Azure IoT Edge module, this is `<deviceID>/<moduleID>`
 * MQTT_TOPIC - (required) Topic to subscribe to. "Read", "Write" and "Command" must be sub-topics of this topic, for IoT Hub, this is `$iothub/methods/POST/#`
-* MQTT_RESPONSE_TOPIC - (required) Topic to send responses to, for IoT Hub, this is `$iothub/methods/res/{status}/?$rid={request id}`
+* MQTT_RESPONSE_TOPIC - (required) Topic to send responses to, for IoT Hub, this is `$iothub/methods/res/`
 * MQTT_USERNAME - (required) Username for the MQTT broker, for IoT Hub, this is `<brokername>/<clientname>/?api-version=2018-06-30`
 * MQTT_PASSWORD - (required) Password for the MQTT broker, for IoT Hub, this is the shared primary key of the client
 
@@ -33,9 +33,14 @@ from a Docker-enabled PC or Linux box. Use [.env.local](.env.local) with suitabl
 
 Alternatively, deploy it as an Azure IoT Edge module from the Azure portal.
 
-## Functionality
+## Sending Commands to UA Commander
+From an MQTT client, commands can be sent to an MQTT broker UA Commander has been configured for. UA Commander subscribes to the configured MQTT topic to receive commands, executes them and reports command execution status via the configured MQTT response topic.
 
-### Sub-Topic "Read"
+The topic must include either Read, Write or Command as well as a request ID in the form {MQTT topic path}/{command name}/?$rid={request id}, for example /myUAServer/Read/?$rid=123.
+
+UA Commander will respond via the configured MQTT response topic in the form {MQTT topic path}/{status code}/?$rid={request id}, for example /myUAServer/response/200/?$rid=123. In this message, the request ID will match the one in the original command message.
+
+### Read Payload
 
 Reads a UANode on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
 
@@ -46,7 +51,7 @@ Reads a UANode on an OPC UA server that must be in the UA Cloud Commander's netw
 }
 ```
 
-### Sub-Topic "Write"
+### Write Payload
 
 Writes a UANode on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
 
@@ -63,7 +68,7 @@ Writes a UANode on an OPC UA server that must be in the UA Cloud Commander's net
 
 The Body is the value and the associated Type can be looked-up in the table [here](https://reference.opcfoundation.org/v104/Core/docs/Part6/5.1.2/).
 
-### Sub-Topic "Command"
+### Command Payload
 
 Executes a command on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
 
