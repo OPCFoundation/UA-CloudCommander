@@ -8,7 +8,7 @@ The following environment variables are REQUIRED:
 
 * MQTT_BROKERNAME - (required) MQTT broker name to connect to
 * MQTT_CLIENTNAME - (required) MQTT client name, for example the device ID UA Cloud Commander is running on. If running as an Azure IoT Edge module, this is `<deviceID>/<moduleID>`
-* MQTT_TOPIC - (required) Topic to subscribe to. "Read", "Write" and "Command" must be sub-topics of this topic, for IoT Hub, this is `$iothub/methods/POST/#`
+* MQTT_TOPIC - (required) Topic to subscribe to in the syntax `<YourTopicName>/#`. `Read`, `Write` and `Command` must be sub-topics of this topic. For IoT Hub, the topic is `$iothub/methods/POST/#`
 * MQTT_RESPONSE_TOPIC - (required) Topic to send responses to, for IoT Hub, this is `$iothub/methods/res/`
 * MQTT_USERNAME - (required) Username for the MQTT broker, for IoT Hub, this is `<brokername>/<clientname>/?api-version=2018-06-30`
 * MQTT_PASSWORD - (required) Password for the MQTT broker, for IoT Hub, this is the shared primary key of the client
