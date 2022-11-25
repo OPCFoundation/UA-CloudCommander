@@ -28,7 +28,6 @@ namespace Opc.Ua.Cloud.Commander
                 // create Kafka client
                 var config = new ProducerConfig {
                     BootstrapServers = Environment.GetEnvironmentVariable("BROKERNAME") + ":9093",
-                    RequestTimeoutMs = 20000,
                     MessageTimeoutMs = 10000,
                     SecurityProtocol = SecurityProtocol.SaslSsl,
                     SaslMechanism = SaslMechanism.Plain,
@@ -36,20 +35,12 @@ namespace Opc.Ua.Cloud.Commander
                     SaslPassword = Environment.GetEnvironmentVariable("PASSWORD")
                 };
 
-                // If serializers are not specified, default serializers from
-                // `Confluent.Kafka.Serializers` will be automatically used where
-                // available. Note: by default strings are encoded as UTF8.
                 _producer = new ProducerBuilder<Null, string>(config).Build();
 
                 var conf = new ConsumerConfig
                 {
-                    GroupId = "consumer-group",
+                    GroupId = Environment.GetEnvironmentVariable("BROKERNAME"),
                     BootstrapServers = Environment.GetEnvironmentVariable("BROKERNAME") + ":9093",
-                    // Note: The AutoOffsetReset property determines the start offset in the event
-                    // there are not yet any committed offsets for the consumer group for the
-                    // topic/partitions of interest. By default, offsets are committed
-                    // automatically, so in this example, consumption will only start from the
-                    // earliest message in the topic 'my-topic' the first time you run the program.
                     AutoOffsetReset = AutoOffsetReset.Earliest,
                     SecurityProtocol= SecurityProtocol.SaslSsl,
                     SaslMechanism = SaslMechanism.Plain,
