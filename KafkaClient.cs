@@ -14,7 +14,7 @@ namespace Opc.Ua.Cloud.Commander
         private ApplicationConfiguration _appConfig = null;
 
         private IProducer<Null, string> _producer = null;
-        private IConsumer<Ignore, string> _consumer = null;
+        private IConsumer<Ignore, byte[]> _consumer = null;
 
         public KafkaClient(ApplicationConfiguration appConfig)
         {
@@ -57,7 +57,7 @@ namespace Opc.Ua.Cloud.Commander
                     SaslPassword= Environment.GetEnvironmentVariable("PASSWORD")
                 };
 
-                _consumer = new ConsumerBuilder<Ignore, string>(conf).Build();
+                _consumer = new ConsumerBuilder<Ignore, byte[]>(conf).Build();
 
                 _consumer.Subscribe(Environment.GetEnvironmentVariable("TOPIC"));
 
@@ -92,14 +92,14 @@ namespace Opc.Ua.Cloud.Commander
 
                 try
                 {
-                    ConsumeResult<Ignore, string> result = _consumer.Consume();
+                    ConsumeResult<Ignore, byte[]> result = _consumer.Consume();
 
                     Log.Logger.Information($"Received method call with topic: {result.Topic} and payload: {result.Message.Value}");
 
                     string requestTopic = Environment.GetEnvironmentVariable("TOPIC");
                     string requestID = result.Topic.Substring(result.Topic.IndexOf("?"));
 
-                    string requestPayload = result.Message.Value;
+                    string requestPayload = Encoding.UTF8.GetString(result.Message.Value);
                     string responsePayload = string.Empty;
 
                     // route this to the right handler
