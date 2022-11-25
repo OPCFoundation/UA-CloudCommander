@@ -33,7 +33,7 @@ namespace Opc.Ua.Cloud.Commander
                 ApplicationType = ApplicationType.Client,
                 ConfigSectionName = "UA.Cloud.Commander"
             };
-                        
+
             // redirect cert store location, if required and update cert issuer name
             if (Environment.GetEnvironmentVariable("CERT_STORE_PATH") != null)
             {
@@ -51,9 +51,19 @@ namespace Opc.Ua.Cloud.Commander
             app.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
             app.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OPCUAServerCertificateValidationCallback);
 
-            // connect to the MQTT broker
-            MQTTClient methodHandler = new MQTTClient(app.ApplicationConfiguration);
-            methodHandler.Connect();
+            MQTTClient methodHandlerMQTT = null;
+            KafkaClient methodHandlerKafka = null;
+            if (Environment.GetEnvironmentVariable("USE_KAFKA") != null)
+            {
+                methodHandlerKafka = new KafkaClient(app.ApplicationConfiguration);
+                methodHandlerKafka.Connect();
+            }
+            else
+            {
+                // connect to the MQTT broker
+                methodHandlerMQTT = new MQTTClient(app.ApplicationConfiguration);
+                methodHandlerMQTT.Connect();
+            }
 
             Log.Logger.Information("UA Cloud Commander is running.");
             await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
@@ -81,11 +91,11 @@ namespace Opc.Ua.Cloud.Commander
             {
                 Directory.CreateDirectory(pathToLogFile);
             }
-            
+
             // set logging sinks
             loggerConfiguration.WriteTo.Console();
             loggerConfiguration.WriteTo.File(Path.Combine(pathToLogFile, "uacloudcommander.logfile.txt"), fileSizeLimitBytes: 1024 * 1024, rollOnFileSizeLimit: true, retainedFileCountLimit: 10);
-            
+
             Log.Logger = loggerConfiguration.CreateLogger();
             Log.Logger.Information($"Log file is: {Path.Combine(pathToLogFile, "uacloudcommander.logfile.txt")}");
         }

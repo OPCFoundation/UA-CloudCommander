@@ -26,11 +26,11 @@ namespace Opc.Ua.Cloud.Commander
         public void Connect()
         {
             // create MQTT client
-            string brokerName = Environment.GetEnvironmentVariable("MQTT_BROKERNAME");
-            string clientName = Environment.GetEnvironmentVariable("MQTT_CLIENTNAME");
-            string userName = Environment.GetEnvironmentVariable("MQTT_USERNAME");
-            string password = Environment.GetEnvironmentVariable("MQTT_PASSWORD");
-            string topic = Environment.GetEnvironmentVariable("MQTT_TOPIC");
+            string brokerName = Environment.GetEnvironmentVariable("BROKERNAME");
+            string clientName = Environment.GetEnvironmentVariable("CLIENTNAME");
+            string userName = Environment.GetEnvironmentVariable("USERNAME");
+            string password = Environment.GetEnvironmentVariable("PASSWORD");
+            string topic = Environment.GetEnvironmentVariable("TOPIC");
             _mqttClient = new MqttClient(brokerName, 8883, true, MqttSslProtocols.TLSv1_2, CertificateValidationCallback, null);
 
             if (Environment.GetEnvironmentVariable("CREATE_SAS_PASSWORD") != null)
@@ -48,7 +48,7 @@ namespace Opc.Ua.Cloud.Commander
             // register publish received and disconnect handler callbacks
             _mqttClient.MqttMsgPublishReceived += PublishReceived;
             _mqttClient.ConnectionClosed += ConnectionClosed;
-            
+
             // subscribe to all our topics
             _mqttClient.Subscribe(new string[] { topic }, new byte[] { MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE });
 
@@ -74,8 +74,8 @@ namespace Opc.Ua.Cloud.Commander
 
         private void PublishReceived(object sender, MqttMsgPublishEventArgs e)
         {
-            string requestTopic = Environment.GetEnvironmentVariable("MQTT_TOPIC");
-            string responseTopic = Environment.GetEnvironmentVariable("MQTT_RESPONSE_TOPIC");
+            string requestTopic = Environment.GetEnvironmentVariable("TOPIC");
+            string responseTopic = Environment.GetEnvironmentVariable("RESPONSE_TOPIC");
             string requestID = e.Topic.Substring(e.Topic.IndexOf("?"));
 
             try

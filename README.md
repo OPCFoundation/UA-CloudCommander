@@ -1,17 +1,17 @@
 # UA Cloud Commander
 
-A cross-platform OPC UA cloud command & control reference implementation leveraging MQTT. It runs in a Docker container and executing commands, reads and writes on on-prem OPC UA servers from the cloud.
+A cross-platform OPC UA cloud command & control reference implementation leveraging MQTT and Kafka. It runs in a Docker container and executing commands, reads and writes on on-prem OPC UA servers from the cloud.
 
 ## Configuration
 
 The following environment variables are REQUIRED:
 
-* MQTT_BROKERNAME - (required) MQTT broker name to connect to
-* MQTT_CLIENTNAME - (required) MQTT client name, for example the device ID UA Cloud Commander is running on. If running as an Azure IoT Edge module, this is `<deviceID>/<moduleID>`
-* MQTT_TOPIC - (required) Topic to subscribe to in the syntax `<YourTopicName>/#`. `Read`, `Write` and `Command` must be sub-topics of this topic. For IoT Hub, the topic is `$iothub/methods/POST/#`
-* MQTT_RESPONSE_TOPIC - (required) Topic to send responses to, for IoT Hub, this is `$iothub/methods/res/`
-* MQTT_USERNAME - (required) Username for the MQTT broker, for IoT Hub, this is `<brokername>/<clientname>/?api-version=2018-06-30`
-* MQTT_PASSWORD - (required) Password for the MQTT broker, for IoT Hub, this is the shared primary key of the client
+* BROKERNAME - (required) broker name to connect to
+* CLIENTNAME - (required) client name, for example the device ID UA Cloud Commander is running on. If running as an Azure IoT Edge module, this is `<deviceID>/<moduleID>`
+* TOPIC - (required) Topic to subscribe to in the syntax `<YourTopicName>/#`. `Read`, `Write` and `Command` must be sub-topics of this topic. For IoT Hub, the topic is `$iothub/methods/POST/#`
+* RESPONSE_TOPIC - (required) Topic to send responses to, for IoT Hub, this is `$iothub/methods/res/`
+* USERNAME - (required) Username for the broker, for IoT Hub, this is `<brokername>/<clientname>/?api-version=2018-06-30`
+* PASSWORD - (required) Password for the broker, for IoT Hub, this is the shared primary key of the client
 
 The following environment variables are optional:
 
@@ -20,6 +20,7 @@ The following environment variables are optional:
 * CREATE_SAS_PASSWORD - (optional) Create a SAS token from the password, this is for example needed when using IoT Hub as the MQTT broker
 * UA_USERNAME - (optional) username for the OPC UA server to connect to
 * UA_PASSWORD - (optional) password for the OPC UA server to connect to
+* USE_KAFKA - (optional) use Kafka instead of MQTT for communication
 
 ## Usage
 
