@@ -35,11 +35,11 @@ from a Docker-enabled PC or Linux box. Use [.env.local](.env.local) with suitabl
 Alternatively, deploy it as an Azure IoT Edge module from the Azure portal.
 
 ## Sending Commands to UA Commander
-From an MQTT client, commands can be sent to an MQTT broker UA Commander has been configured for. UA Commander subscribes to the configured MQTT topic to receive commands, executes them and reports command execution status via the configured MQTT response topic.
+From an broker client, commands can be sent to a broker UA Commander has been configured for. UA Commander subscribes to the configured broker topic to receive commands, executes them and reports command execution status via the configured broker response topic.
 
-The topic must include either Read, Write or Command as well as a request ID in the form {MQTT topic path}/{command name}/?$rid={request id}, for example /myUAServer/Read/?$rid=123.
+The topic must include either Read, Write or Command as well as a request ID in the form {broker topic path}/{command name}/?$rid={request id}, for example /myUAServer/Read/?$rid=123.
 
-UA Commander will respond via the configured MQTT response topic in the form {MQTT topic path}/{status code}/?$rid={request id}, for example /myUAServer/response/200/?$rid=123. In this message, the request ID will match the one in the original command message.
+UA Commander will respond via the configured broker response topic in the form {broker topic path}/{status code}/?$rid={request id}, for example /myUAServer/response/200/?$rid=123. In this message, the request ID will match the one in the original command message.
 
 ### Read Payload
 
