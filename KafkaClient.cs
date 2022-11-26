@@ -39,7 +39,7 @@ namespace Opc.Ua.Cloud.Commander
 
                 var conf = new ConsumerConfig
                 {
-                    GroupId = Environment.GetEnvironmentVariable("BROKERNAME"),
+                    GroupId = Environment.GetEnvironmentVariable("CLIENTNAME"),
                     BootstrapServers = Environment.GetEnvironmentVariable("BROKERNAME") + ":9093",
                     AutoOffsetReset = AutoOffsetReset.Earliest,
                     SecurityProtocol= SecurityProtocol.SaslSsl,
@@ -88,10 +88,21 @@ namespace Opc.Ua.Cloud.Commander
                     Log.Logger.Information($"Received method call with topic: {result.Topic} and payload: {result.Message.Value}");
 
                     string requestTopic = Environment.GetEnvironmentVariable("TOPIC");
-                    string requestID = result.Topic.Substring(result.Topic.IndexOf("?"));
-
                     string requestPayload = Encoding.UTF8.GetString(result.Message.Value);
                     string responsePayload = string.Empty;
+
+                    // try to retrieve the request id from the topic
+                    string requestID = null;
+                    if (result.Topic.IndexOf("?") != -1)
+                    {
+                        requestID = result.Topic.Substring(result.Topic.IndexOf("?"));
+                    }
+
+                    if (string.IsNullOrEmpty(requestID))
+                    {
+                        // retrieve it from the message instead
+                        // TODO
+                    }
 
                     // route this to the right handler
                     if (result.Topic.StartsWith(requestTopic.TrimEnd('#') + "Command"))
@@ -111,6 +122,7 @@ namespace Opc.Ua.Cloud.Commander
                     else
                     {
                         Log.Logger.Error("Unknown command received: " + result.Topic);
+                        responsePayload = "Unkown command!";
                     }
 
                     // send reponse to Kafka broker
