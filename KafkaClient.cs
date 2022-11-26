@@ -5,6 +5,7 @@ namespace Opc.Ua.Cloud.Commander
     using Newtonsoft.Json;
     using Serilog;
     using System;
+    using System.Collections.Generic;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
@@ -50,7 +51,11 @@ namespace Opc.Ua.Cloud.Commander
 
                 _consumer = new ConsumerBuilder<Ignore, byte[]>(conf).Build();
 
-                _consumer.Subscribe(Environment.GetEnvironmentVariable("TOPIC"));
+                _consumer.Subscribe(new List<string>() {
+                    Environment.GetEnvironmentVariable("CLIENTNAME") + ".command",
+                    Environment.GetEnvironmentVariable("CLIENTNAME") + ".read",
+                    Environment.GetEnvironmentVariable("CLIENTNAME") + ".write"
+                });
 
                 _ = Task.Run(() => HandleCommand());
 
@@ -87,7 +92,6 @@ namespace Opc.Ua.Cloud.Commander
 
                     Log.Logger.Information($"Received method call with topic: {result.Topic} and payload: {result.Message.Value}");
 
-                    string requestTopic = Environment.GetEnvironmentVariable("TOPIC");
                     string requestPayload = Encoding.UTF8.GetString(result.Message.Value);
                     string responsePayload = string.Empty;
 
@@ -105,16 +109,16 @@ namespace Opc.Ua.Cloud.Commander
                     }
 
                     // route this to the right handler
-                    if (result.Topic.StartsWith(requestTopic.TrimEnd('#') + "Command"))
+                    if (result.Topic.EndsWith(".command"))
                     {
                         new UAClient().ExecuteUACommand(_appConfig, requestPayload);
                         responsePayload = "Success";
                     }
-                    else if (result.Topic.StartsWith(requestTopic.TrimEnd('#') + "Read"))
+                    else if (result.Topic.EndsWith(".read"))
                     {
                         responsePayload = new UAClient().ReadUAVariable(_appConfig, requestPayload);
                     }
-                    else if (result.Topic.StartsWith(requestTopic.TrimEnd('#') + "Write"))
+                    else if (result.Topic.EndsWith(".write"))
                     {
                         new UAClient().WriteUAVariable(_appConfig, requestPayload);
                         responsePayload = "Success";
