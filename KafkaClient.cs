@@ -3,6 +3,7 @@ namespace Opc.Ua.Cloud.Commander
 {
     using Confluent.Kafka;
     using Newtonsoft.Json;
+    using Org.BouncyCastle.Asn1.Ocsp;
     using Serilog;
     using System;
     using System.Collections.Generic;
@@ -76,7 +77,7 @@ namespace Opc.Ua.Cloud.Commander
                 Value = payload
             };
 
-            _producer.ProduceAsync(Environment.GetEnvironmentVariable("RESPONSE_TOPIC"), message).GetAwaiter().GetResult();
+            _producer.ProduceAsync(Environment.GetEnvironmentVariable("CLIENTNAME") + ".response", message).GetAwaiter().GetResult();
         }
 
         // handles all incoming commands form the cloud
@@ -84,60 +85,64 @@ namespace Opc.Ua.Cloud.Commander
         {
             while (true)
             {
-                Thread.Sleep(1000);
+                ResponseModel response = new()
+                {
+                    TimeStamp = DateTime.UtcNow,
+                };
 
                 try
                 {
                     ConsumeResult<Ignore, byte[]> result = _consumer.Consume();
 
-                    Log.Logger.Information($"Received method call with topic: {result.Topic} and payload: {result.Message.Value}");
-
                     string requestPayload = Encoding.UTF8.GetString(result.Message.Value);
-                    string responsePayload = string.Empty;
+                    Log.Logger.Information($"Received method call with topic: {result.Topic} and payload: {requestPayload}");
 
-                    // try to retrieve the request id from the topic
-                    string requestID = null;
-                    if (result.Topic.IndexOf("?") != -1)
+                    // parse the message
+                    RequestModel request = JsonConvert.DeserializeObject<RequestModel>(requestPayload);
+
+                    // discard messages that are older than 15 seconds
+                    if (request.TimeStamp < DateTime.UtcNow.AddSeconds(-15))
                     {
-                        requestID = result.Topic.Substring(result.Topic.IndexOf("?"));
+                        Log.Logger.Information($"Discarding old message with timestamp {request.TimeStamp}");
+                        continue;
                     }
 
-                    if (string.IsNullOrEmpty(requestID))
-                    {
-                        // retrieve it from the message instead
-                        // TODO
-                    }
+                    response.CorrelationId = request.CorrelationId;
 
                     // route this to the right handler
                     if (result.Topic.EndsWith(".command"))
                     {
                         new UAClient().ExecuteUACommand(_appConfig, requestPayload);
-                        responsePayload = "Success";
+                        response.Success = true;
                     }
                     else if (result.Topic.EndsWith(".read"))
                     {
-                        responsePayload = new UAClient().ReadUAVariable(_appConfig, requestPayload);
+                        response.Status = new UAClient().ReadUAVariable(_appConfig, requestPayload);
+                        response.Success = true;
                     }
                     else if (result.Topic.EndsWith(".write"))
                     {
                         new UAClient().WriteUAVariable(_appConfig, requestPayload);
-                        responsePayload = "Success";
+                        response.Success = true;
                     }
                     else
                     {
                         Log.Logger.Error("Unknown command received: " + result.Topic);
-                        responsePayload = "Unkown command!";
+                        response.Status = "Unkown command " + result.Topic;
+                        response.Success = false;
                     }
 
                     // send reponse to Kafka broker
-                    Publish(JsonConvert.SerializeObject(responsePayload));
+                    Publish(JsonConvert.SerializeObject(response));
                 }
                 catch (Exception ex)
                 {
                     Log.Logger.Error(ex, "HandleMessageAsync");
+                    response.Status = ex.Message;
+                    response.Success = false;
 
                     // send error to Kafka broker
-                    Publish(JsonConvert.SerializeObject(ex.Message));
+                    Publish(JsonConvert.SerializeObject(response));
                 }
             }
         }

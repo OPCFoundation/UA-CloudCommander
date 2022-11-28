@@ -78,41 +78,63 @@ namespace Opc.Ua.Cloud.Commander
             string responseTopic = Environment.GetEnvironmentVariable("RESPONSE_TOPIC");
             string requestID = e.Topic.Substring(e.Topic.IndexOf("?"));
 
+            ResponseModel response = new()
+            {
+                TimeStamp = DateTime.UtcNow,
+            };
+
             try
             {
                 string requestPayload = Encoding.UTF8.GetString(e.Message);
                 string responsePayload = string.Empty;
 
+                // parse the message
+                RequestModel request = JsonConvert.DeserializeObject<RequestModel>(requestPayload);
+
+                // discard messages that are older than 15 seconds
+                if (request.TimeStamp < DateTime.UtcNow.AddSeconds(-15))
+                {
+                    Log.Logger.Information($"Discarding old message with timestamp {request.TimeStamp}");
+                    return;
+                }
+
+                response.CorrelationId = request.CorrelationId;
+
                 // route this to the right handler
                 if (e.Topic.StartsWith(requestTopic.TrimEnd('#') + "Command"))
                 {
                     new UAClient().ExecuteUACommand(_appConfig, requestPayload);
-                    responsePayload = "Success";
+                    response.Success = true;
                 }
                 else if (e.Topic.StartsWith(requestTopic.TrimEnd('#') + "Read"))
                 {
-                    responsePayload = new UAClient().ReadUAVariable(_appConfig, requestPayload);
+                    response.Status = new UAClient().ReadUAVariable(_appConfig, requestPayload);
+                    response.Success = true;
                 }
                 else if (e.Topic.StartsWith(requestTopic.TrimEnd('#') + "Write"))
                 {
                     new UAClient().WriteUAVariable(_appConfig, requestPayload);
-                    responsePayload = "Success";
+                    response.Success = true;
                 }
                 else
                 {
                     Log.Logger.Error("Unknown command received: " + e.Topic);
+                    response.Status = "Unkown command " + e.Topic;
+                    response.Success = false;
                 }
 
                 // send reponse to MQTT broker
-                _mqttClient.Publish(responseTopic + "/200/" + requestID, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(responsePayload)), MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE, false);
+                _mqttClient.Publish(responseTopic + "/200/" + requestID, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(response)), MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE, false);
 
             }
             catch (Exception ex)
             {
                 Log.Logger.Error(ex, "MQTTBrokerPublishReceived");
+                response.Status = ex.Message;
+                response.Success = false;
 
                 // send error to MQTT broker
-                _mqttClient.Publish(responseTopic + "/500/" + requestID, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(ex.Message)), MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE, false);
+                _mqttClient.Publish(responseTopic + "/500/" + requestID, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(response)), MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE, false);
             }
         }
 

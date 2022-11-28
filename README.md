@@ -47,6 +47,8 @@ Reads a UANode on an OPC UA server that must be in the UA Cloud Commander's netw
 
 ```json
 {
+    "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07", // a GUID
+    "TimeStamp": "2022-11-28T12:01:00.0923534Z", // sender timestamp in UTC
     "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
     "NodeId": "http://opcfoundation.org/UA/Station/;i=123"
 }
@@ -58,6 +60,8 @@ Writes a UANode on an OPC UA server that must be in the UA Cloud Commander's net
 
 ```json
 {
+    "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07", // a GUID
+    "TimeStamp": "2022-11-28T12:01:00.0923534Z", // sender timestamp in UTC
     "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
     "NodeId": "http://opcfoundation.org/UA/Station/;i=123",
     "ValueToWrite": {
@@ -75,6 +79,8 @@ Executes a command on an OPC UA server that must be in the UA Cloud Commander's 
 
 ```json
 {
+    "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07", // a GUID
+    "TimeStamp": "2022-11-28T12:01:00.0923534Z", // sender timestamp in UTC
     "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
     "MethodNodeId": "http://opcfoundation.org/UA/Station/;i=124",
     "ParentNodeId": "http://opcfoundation.org/UA/Station/;i=120",
@@ -96,6 +102,19 @@ Executes a command on an OPC UA server that must be in the UA Cloud Commander's 
 ```
 
 Again, the Body is the value and the associated Type can be looked-up in the table [here](https://reference.opcfoundation.org/v104/Core/docs/Part6/5.1.2/).
+
+### UA Commander Response
+
+UA Cloud Commander will match the correlation ID of the request, update the timestamp (in UTC) and give a status message on failure.
+
+```json
+{
+    "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07",
+    "TimeStamp": "2022-11-28T12:01:00.0923534Z",
+    "Success": TRUE,
+    "Status": ""
+}
+```
 
 ## Docker Build Status
 
