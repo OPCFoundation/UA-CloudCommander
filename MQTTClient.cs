@@ -74,6 +74,8 @@ namespace Opc.Ua.Cloud.Commander
 
         private void PublishReceived(object sender, MqttMsgPublishEventArgs e)
         {
+            Log.Logger.Information($"Received cloud command with topic: {e.Topic} and payload: {Encoding.UTF8.GetString(e.Message)}");
+
             string requestTopic = Environment.GetEnvironmentVariable("TOPIC");
             string responseTopic = Environment.GetEnvironmentVariable("RESPONSE_TOPIC");
             string requestID = e.Topic.Substring(e.Topic.IndexOf("?"));
@@ -86,7 +88,6 @@ namespace Opc.Ua.Cloud.Commander
             try
             {
                 string requestPayload = Encoding.UTF8.GetString(e.Message);
-                string responsePayload = string.Empty;
 
                 // parse the message
                 RequestModel request = JsonConvert.DeserializeObject<RequestModel>(requestPayload);
@@ -101,7 +102,7 @@ namespace Opc.Ua.Cloud.Commander
                 response.CorrelationId = request.CorrelationId;
 
                 // route this to the right handler
-                if (e.Topic.StartsWith(requestTopic.TrimEnd('#') + "Command"))
+                if (e.Topic.StartsWith(requestTopic.TrimEnd('#') + "MethodCall"))
                 {
                     new UAClient().ExecuteUACommand(_appConfig, requestPayload);
                     response.Success = true;

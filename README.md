@@ -47,6 +47,7 @@ Reads a UANode on an OPC UA server that must be in the UA Cloud Commander's netw
 
 ```json
 {
+    "Command": "read",
     "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07", // a GUID
     "TimeStamp": "2022-11-28T12:01:00.0923534Z", // sender timestamp in UTC
     "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
@@ -60,6 +61,7 @@ Writes a UANode on an OPC UA server that must be in the UA Cloud Commander's net
 
 ```json
 {
+    "Command": "write",
     "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07", // a GUID
     "TimeStamp": "2022-11-28T12:01:00.0923534Z", // sender timestamp in UTC
     "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
@@ -79,6 +81,7 @@ Executes a command on an OPC UA server that must be in the UA Cloud Commander's 
 
 ```json
 {
+    "Command": "methodcall",
     "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07", // a GUID
     "TimeStamp": "2022-11-28T12:01:00.0923534Z", // sender timestamp in UTC
     "Endpoint": "opc.tcp://myopcserver.contoso/UA/",

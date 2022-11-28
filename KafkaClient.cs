@@ -52,11 +52,7 @@ namespace Opc.Ua.Cloud.Commander
 
                 _consumer = new ConsumerBuilder<Ignore, byte[]>(conf).Build();
 
-                _consumer.Subscribe(new List<string>() {
-                    Environment.GetEnvironmentVariable("CLIENTNAME") + ".command",
-                    Environment.GetEnvironmentVariable("CLIENTNAME") + ".read",
-                    Environment.GetEnvironmentVariable("CLIENTNAME") + ".write"
-                });
+                _consumer.Subscribe(Environment.GetEnvironmentVariable("TOPIC"));
 
                 _ = Task.Run(() => HandleCommand());
 
@@ -77,7 +73,7 @@ namespace Opc.Ua.Cloud.Commander
                 Value = payload
             };
 
-            _producer.ProduceAsync(Environment.GetEnvironmentVariable("CLIENTNAME") + ".response", message).GetAwaiter().GetResult();
+            _producer.ProduceAsync(Environment.GetEnvironmentVariable("RESPONSE_TOPIC"), message).GetAwaiter().GetResult();
         }
 
         // handles all incoming commands form the cloud
@@ -110,17 +106,17 @@ namespace Opc.Ua.Cloud.Commander
                     response.CorrelationId = request.CorrelationId;
 
                     // route this to the right handler
-                    if (result.Topic.EndsWith(".command"))
+                    if (request.Command == "methodcall")
                     {
                         new UAClient().ExecuteUACommand(_appConfig, requestPayload);
                         response.Success = true;
                     }
-                    else if (result.Topic.EndsWith(".read"))
+                    else if (request.Command == "read")
                     {
                         response.Status = new UAClient().ReadUAVariable(_appConfig, requestPayload);
                         response.Success = true;
                     }
-                    else if (result.Topic.EndsWith(".write"))
+                    else if (request.Command == "write")
                     {
                         new UAClient().WriteUAVariable(_appConfig, requestPayload);
                         response.Success = true;

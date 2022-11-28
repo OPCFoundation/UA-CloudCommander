@@ -5,6 +5,8 @@ namespace Opc.Ua.Cloud.Commander
 
     class RequestModel
     {
+        public string Command { get; set; }
+
         public Guid CorrelationId { get; set; }
 
         public DateTime TimeStamp { get; set; }
