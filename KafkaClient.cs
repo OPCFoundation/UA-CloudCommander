@@ -109,16 +109,19 @@ namespace Opc.Ua.Cloud.Commander
                     if (request.Command == "methodcall")
                     {
                         new UAClient().ExecuteUACommand(_appConfig, requestPayload);
+                        Log.Logger.Information($"Call succeeded, sending response to broker...");
                         response.Success = true;
                     }
                     else if (request.Command == "read")
                     {
                         response.Status = new UAClient().ReadUAVariable(_appConfig, requestPayload);
+                        Log.Logger.Information($"Read succeeded, sending response to broker...");
                         response.Success = true;
                     }
                     else if (request.Command == "write")
                     {
                         new UAClient().WriteUAVariable(_appConfig, requestPayload);
+                        Log.Logger.Information($"Write succeeded, sending response to broker...");
                         response.Success = true;
                     }
                     else
@@ -130,6 +133,7 @@ namespace Opc.Ua.Cloud.Commander
 
                     // send reponse to Kafka broker
                     Publish(JsonConvert.SerializeObject(response));
+                    Log.Logger.Information($"Response sent to broker.");
                 }
                 catch (Exception ex)
                 {
