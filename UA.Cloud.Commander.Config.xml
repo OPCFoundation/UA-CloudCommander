@@ -4,41 +4,42 @@
   xmlns="http://opcfoundation.org/UA/SDK/Configuration.xsd"
   schemaLocation="./Schema/ApplicationConfiguration.xsd"
 >
-  <ApplicationName>UACloudCommander</ApplicationName>
-  <ApplicationUri>urn:localhost:UACloudCommander:microsoft</ApplicationUri>
+  <ApplicationName>UndefinedAppName</ApplicationName>
+  <ApplicationUri>urn:UndefinedAppName</ApplicationUri>
   <ProductUri>https://github.com/barnstee/UACloudCommander</ProductUri>
   <ApplicationType>Client_1</ApplicationType>
+
   <SecurityConfiguration>
     <ApplicationCertificate>
       <StoreType>Directory</StoreType>
-      <StorePath>%LocalApplicationData%/UACloudCommander/pki/own</StorePath>
-      <SubjectName>CN=UACloudCommander, C=US, S=Washington, O=Microsoft, DC=localhost</SubjectName>
+      <StorePath>./pki/own</StorePath>
     </ApplicationCertificate>
     <TrustedIssuerCertificates>
       <StoreType>Directory</StoreType>
-      <StorePath>%LocalApplicationData%/UACloudCommander/pki/issuer</StorePath>
+      <StorePath>./pki/issuer</StorePath>
     </TrustedIssuerCertificates>
     <TrustedPeerCertificates>
       <StoreType>Directory</StoreType>
-      <StorePath>/Shared/CertificateStores/UA Applications</StorePath>
+      <StorePath>./pki/trusted</StorePath>
     </TrustedPeerCertificates>
     <NonceLength>32</NonceLength>
     <RejectedCertificateStore>
       <StoreType>Directory</StoreType>
-      <StorePath>%LocalApplicationData%/UACloudCommander/pki/rejected</StorePath>
+      <StorePath>./pki/rejected</StorePath>
     </RejectedCertificateStore>
     <RejectSHA1SignedCertificates>false</RejectSHA1SignedCertificates>
     <MinimumCertificateKeySize>1024</MinimumCertificateKeySize>
     <SendCertificateChain>false</SendCertificateChain>
     <UserIssuerCertificates>
       <StoreType>Directory</StoreType>
-      <StorePath>%LocalApplicationData%/UACloudCommander/pki/issuerUser</StorePath>
+      <StorePath>./pki/issuerUser</StorePath>
     </UserIssuerCertificates>
     <TrustedUserCertificates>
       <StoreType>Directory</StoreType>
-      <StorePath>%LocalApplicationData%/UACloudCommander/pki/trustedUser</StorePath>
+      <StorePath>./pki/trustedUser</StorePath>
     </TrustedUserCertificates>
-</SecurityConfiguration>
+  </SecurityConfiguration>
+
   <TransportConfigurations/>
   <TransportQuotas>
     <OperationTimeout>120000</OperationTimeout>

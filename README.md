@@ -6,21 +6,22 @@ A cross-platform OPC UA cloud command & control reference implementation leverag
 
 The following environment variables are REQUIRED:
 
-* BROKERNAME - (required) broker name to connect to
-* CLIENTNAME - (required) client name, for example the device ID UA Cloud Commander is running on. If running as an Azure IoT Edge module, this is `<deviceID>/<moduleID>`
-* TOPIC - (required) Topic to subscribe to in the syntax `<YourTopicName>/#`. `Read`, `Write` and `Command` must be sub-topics of this topic. For IoT Hub, the topic is `$iothub/methods/POST/#`
-* RESPONSE_TOPIC - (required) Topic to send responses to, for IoT Hub, this is `$iothub/methods/res/`
-* USERNAME - (required) Username for the broker, for IoT Hub, this is `<brokername>/<clientname>/?api-version=2018-06-30`
-* PASSWORD - (required) Password for the broker, for IoT Hub, this is the shared primary key of the client
+* BROKERNAME - Broker name to connect to
+* CLIENTNAME - Client name, for example the device ID UA Cloud Commander is running on. If running as an Azure IoT Edge module, this is `<deviceID>/<moduleID>`
+* TOPIC - Topic to subscribe to in the syntax `<YourTopicName>/#`. `Read`, `Write` and `Command` must be sub-topics of this topic. For IoT Hub, the topic is `$iothub/methods/POST/#`
+* RESPONSE_TOPIC - Topic to send responses to, for IoT Hub, this is `$iothub/methods/res/`
+* USERNAME - Username for the broker, for IoT Hub, this is `<brokername>/<clientname>/?api-version=2018-06-30`
+* PASSWORD - Password for the broker, for IoT Hub, this is the shared primary key of the client
 
 The following environment variables are optional:
 
-* LOG_FILE_PATH - (optional) Path to use for the log file to use
-* CERT_STORE_PATH - (optional) Path to OPC UA certificate store to use
-* CREATE_SAS_PASSWORD - (optional) Create a SAS token from the password, this is for example needed when using IoT Hub as the MQTT broker
-* UA_USERNAME - (optional) username for the OPC UA server to connect to
-* UA_PASSWORD - (optional) password for the OPC UA server to connect to
-* USE_KAFKA - (optional) use Kafka instead of MQTT for communication
+* CREATE_SAS_PASSWORD - Create a SAS token from the password, this is for example needed when using IoT Hub as the MQTT broker
+* UA_USERNAME - Username for the OPC UA server to connect to
+* UA_PASSWORD - Password for the OPC UA server to connect to
+* USE_KAFKA - Use Kafka instead of MQTT for communication
+* STORAGE_CONNECTION_STRING - The connection string to the cloud-based OPC UA certificate store.
+* STORAGE_CONTAINER_NAME - The cloud-based OPC UA certificate store container name.
+* APPNAME - An alternative name for UA Cloud Commander.
 
 ## Usage
 

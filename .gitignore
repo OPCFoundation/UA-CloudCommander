@@ -350,3 +350,4 @@ MigrationBackup/
 .ionide/
 /Properties/launchSettings.json
 /uacloudcommander.logfile.txt
+/pki
