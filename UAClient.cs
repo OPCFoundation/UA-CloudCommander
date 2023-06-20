@@ -47,7 +47,7 @@ namespace Opc.Ua.Cloud.Commander
                 };
 
                 request.InputArguments = decoder.ReadVariantArray("Arguments");
-   
+
                 CallMethodRequestCollection requests = new CallMethodRequestCollection
                 {
                     request
@@ -155,7 +155,7 @@ namespace Opc.Ua.Cloud.Commander
                 session = CreateSession(appConfiguration, serverEndpoint);
 
                 string expandedNodeID = decoder.ReadString("NodeId");
-                
+
                 if (string.IsNullOrEmpty(expandedNodeID))
                 {
                     Log.Logger.Error("Expanded node ID is not specified!");
@@ -163,7 +163,7 @@ namespace Opc.Ua.Cloud.Commander
                 }
 
                 ExpandedNodeId nodeID = ExpandedNodeId.Parse(expandedNodeID);
-                                
+
                 WriteValue nodeToWrite = new WriteValue()
                 {
                     NodeId = new NodeId(nodeID.Identifier, nodeID.NamespaceIndex),
@@ -221,8 +221,7 @@ namespace Opc.Ua.Cloud.Commander
 
             // find endpoint on a local OPC UA server
             EndpointDescription endpointDescription = CoreClientUtils.SelectEndpoint(serverEndpoint, true);
-            EndpointConfiguration endpointConfiguration = EndpointConfiguration.Create(appConfiguration);
-            ConfiguredEndpoint endpoint = new ConfiguredEndpoint(null, endpointDescription, endpointConfiguration);
+            ConfiguredEndpoint endpoint = new ConfiguredEndpoint(null, endpointDescription, EndpointConfiguration.Create());
 
             // check which identity to use
             UserIdentity userIdentity = new UserIdentity(new AnonymousIdentityToken());
@@ -236,7 +235,7 @@ namespace Opc.Ua.Cloud.Commander
             Session session = Session.Create(
                 appConfiguration,
                 endpoint,
-                false,
+                true,
                 false,
                 appConfiguration.ApplicationName,
                 (uint)appConfiguration.ClientConfiguration.DefaultSessionTimeout,
