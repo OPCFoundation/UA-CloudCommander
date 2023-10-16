@@ -143,6 +143,113 @@ namespace Opc.Ua.Cloud.Commander
             }
         }
 
+        public string ReadUAHistory(ApplicationConfiguration appConfiguration, string payload)
+        {
+            Session session = null;
+
+            try
+            {
+                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext());
+
+                string serverEndpoint = decoder.ReadString("Endpoint");
+                session = CreateSession(appConfiguration, serverEndpoint);
+
+                string expandedNodeID = decoder.ReadString("NodeId");
+                DateTime startTime = decoder.ReadDateTime("StartTime");
+                DateTime endTime = decoder.ReadDateTime("EndTime");
+
+
+                if (string.IsNullOrEmpty(expandedNodeID))
+                {
+                    Log.Logger.Error("Expanded node ID is not specified!");
+                    throw new ArgumentException("Expanded node ID is not specified!");
+                }
+
+                ExpandedNodeId nodeID = ExpandedNodeId.Parse(expandedNodeID);
+
+                // read a variable node from the OPC UA server
+                VariableNode node = (VariableNode)session.ReadNode(ExpandedNodeId.ToNodeId(nodeID, session.NamespaceUris));
+
+                // load complex type system
+                ComplexTypeSystem complexTypeSystem = new(session);
+                ExpandedNodeId nodeTypeId = node.DataType;
+                complexTypeSystem.LoadType(nodeTypeId).GetAwaiter().GetResult();
+
+                // now that we have loaded the (potentionally) complex type, we can read the history
+                ReadRawModifiedDetails details = new()
+                {
+                    StartTime = startTime,
+                    EndTime = endTime,
+                    NumValuesPerNode = 0,
+                    IsReadModified = false,
+                    ReturnBounds = false
+                };
+
+                HistoryReadValueIdCollection nodesToRead = new();
+                HistoryReadValueId nodeToRead = new()
+                {
+                    NodeId = ExpandedNodeId.ToNodeId(nodeID, session.NamespaceUris)
+                };
+                nodesToRead.Add(nodeToRead);
+
+                session.HistoryRead(
+                    null,
+                    new ExtensionObject(details),
+                    TimestampsToReturn.Both,
+                    false,
+                    nodesToRead,
+                    out HistoryReadResultCollection results,
+                    out DiagnosticInfoCollection diagnosticInfos);
+
+                if (StatusCode.IsBad(results[0].StatusCode))
+                {
+                    throw ServiceResultException.Create(results[0].StatusCode.Code, "Reading OPC UA node failed!");
+                }
+
+                HistoryData values = ExtensionObject.ToEncodeable(results[0].HistoryData) as HistoryData;
+
+                // release continuation points
+                if (results[0].ContinuationPoint != null && results[0].ContinuationPoint.Length > 0)
+                {
+                    nodeToRead.ContinuationPoint = results[0].ContinuationPoint;
+
+                    session.HistoryRead(
+                        null,
+                        new ExtensionObject(details),
+                        TimestampsToReturn.Neither,
+                        true,
+                        nodesToRead,
+                        out results,
+                        out diagnosticInfos);
+                }
+
+                string result = string.Empty;
+                foreach(DataValue value in values.DataValues)
+                {
+                    result += (value.ToString() + ',');
+                }
+
+                return result.TrimEnd(',');
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error(ex, "Reading OPC UA node failed!");
+                throw;
+            }
+            finally
+            {
+                if (session != null)
+                {
+                    if (session.Connected)
+                    {
+                        session.Close();
+                    }
+
+                    session.Dispose();
+                }
+            }
+        }
+
         public void WriteUAVariable(ApplicationConfiguration appConfiguration, string payload)
         {
             Session session = null;

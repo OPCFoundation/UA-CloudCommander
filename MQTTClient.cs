@@ -112,6 +112,11 @@ namespace Opc.Ua.Cloud.Commander
                     response.Status = new UAClient().ReadUAVariable(_appConfig, requestPayload);
                     response.Success = true;
                 }
+                else if (e.Topic.StartsWith(requestTopic.TrimEnd('#') + "HistoryRead"))
+                {
+                    response.Status = new UAClient().ReadUAHistory(_appConfig, requestPayload);
+                    response.Success = true;
+                }
                 else if (e.Topic.StartsWith(requestTopic.TrimEnd('#') + "Write"))
                 {
                     new UAClient().WriteUAVariable(_appConfig, requestPayload);

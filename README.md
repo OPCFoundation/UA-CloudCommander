@@ -1,6 +1,6 @@
 # UA Cloud Commander
 
-A cross-platform OPC UA cloud command & control reference implementation leveraging MQTT and Kafka. It runs in a Docker container and executing commands, reads and writes on on-prem OPC UA servers from the cloud.
+A cross-platform OPC UA cloud command & control reference implementation leveraging MQTT and Kafka. It runs in a Docker container and executes OPC UA commands, reads and writes OPC UA variables and supports Historical Data Access (HDA) for on-prem OPC UA servers from the cloud.
 
 ## Configuration
 
@@ -44,7 +44,7 @@ UA Commander will respond via the configured broker response topic in the form {
 
 ### Read Payload
 
-Reads a UANode on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
+Reads a UA Node on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
 
 ```json
 {
@@ -56,9 +56,25 @@ Reads a UANode on an OPC UA server that must be in the UA Cloud Commander's netw
 }
 ```
 
+### Historical Read (HDA) Payload
+
+Reads the histroy for a UA Node on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
+
+```json
+{
+    "Command": "read",
+    "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07", // a GUID
+    "TimeStamp": "2022-11-28T12:01:00.0923534Z", // sender timestamp in UTC
+    "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
+    "NodeId": "http://opcfoundation.org/UA/Station/;i=123"
+    "StartTime": "2022-11-28T12:00:00.0923534Z" // start time for historical values
+    "EndTime": "2022-11-28T12:01:00.0923534Z" // end time for historical values
+}
+```
+
 ### Write Payload
 
-Writes a UANode on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
+Writes a UA Node on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
 
 ```json
 {

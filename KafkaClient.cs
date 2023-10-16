@@ -118,6 +118,12 @@ namespace Opc.Ua.Cloud.Commander
                         Log.Logger.Information($"Read succeeded, sending response to broker...");
                         response.Success = true;
                     }
+                    else if (request.Command == "historyread")
+                    {
+                        response.Status = new UAClient().ReadUAHistory(_appConfig, requestPayload);
+                        Log.Logger.Information($"History read succeeded, sending response to broker...");
+                        response.Success = true;
+                    }
                     else if (request.Command == "write")
                     {
                         new UAClient().WriteUAVariable(_appConfig, requestPayload);
