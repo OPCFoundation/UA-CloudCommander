@@ -7,6 +7,7 @@ A cross-platform, cloud-based OPC UA command & control reference implementation 
 The following environment variables are REQUIRED:
 
 * BROKERNAME - Broker name to connect to
+* BROKERPORT = Broker port to connect to. When 443 is specified, Websockets are used.
 * CLIENTNAME - Client name, for example the device ID UA Cloud Commander is running on. If running as an Azure IoT Edge module, this is `<deviceID>/<moduleID>`
 * TOPIC - Topic to subscribe to in the syntax `<YourTopicName>/#`. `Read`, `Write` and `Command` must be sub-topics of this topic. For IoT Hub, the topic is `$iothub/methods/POST/#`
 * RESPONSE_TOPIC - Topic to send responses to, for IoT Hub, this is `$iothub/methods/res/`
@@ -16,6 +17,8 @@ The following environment variables are REQUIRED:
 The following environment variables are optional:
 
 * CREATE_SAS_PASSWORD - Create a SAS token from the password, this is for example needed when using IoT Hub as the MQTT broker
+* USE_TLS - Use TLS
+* USE_UA_CERT_AUTH - Use the UA Certificate to authenticate with the MQTT broker
 * UA_USERNAME - Username for the OPC UA server to connect to
 * UA_PASSWORD - Password for the OPC UA server to connect to
 * USE_KAFKA - Use Kafka instead of MQTT for communication
