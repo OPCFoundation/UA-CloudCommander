@@ -31,7 +31,7 @@ The following environment variables are optional:
 Execute:
 
 ```shell
-docker run --env-file .env.local ghcr.io/barnstee/ua-cloudcommander:main
+docker run --env-file .env.local ghcr.io/opcfoundation/ua-cloudcommander:main
 ```
 
 from a Docker-enabled PC or Linux box. Use [.env.local](.env.local) with suitable values.
