@@ -65,7 +65,7 @@ Reads the histroy for a UA Node on an OPC UA server that must be in the UA Cloud
 
 ```json
 {
-    "Command": "HistorialRead",
+    "Command": "HistoricalRead",
     "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07", // a GUID
     "TimeStamp": "2022-11-28T12:01:00.0923534Z", // sender timestamp in UTC
     "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
