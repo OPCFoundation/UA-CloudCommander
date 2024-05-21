@@ -45,7 +45,7 @@ The topic must include either Read, Write or Command as well as a request ID in 
 
 UA Commander will respond via the configured broker response topic in the form {broker topic path}/{status code}/?$rid={request id}, for example /myUAServer/response/200/?$rid=123. In this message, the request ID will match the one in the original command message.
 
-### Read Payload
+### `Read` Command Payload
 
 Reads a UA Node on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
 
@@ -59,7 +59,7 @@ Reads a UA Node on an OPC UA server that must be in the UA Cloud Commander's net
 }
 ```
 
-### Historical Read (HDA) Payload
+### `HistoricalRead` Command (HDA) Payload
 
 Reads the histroy for a UA Node on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
 
@@ -75,7 +75,7 @@ Reads the histroy for a UA Node on an OPC UA server that must be in the UA Cloud
 }
 ```
 
-### Write Payload
+### `Write` Command Payload
 
 Writes a UA Node on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
 
@@ -95,7 +95,7 @@ Writes a UA Node on an OPC UA server that must be in the UA Cloud Commander's ne
 
 The Body is the value and the associated Type can be looked-up in the table [here](https://reference.opcfoundation.org/v104/Core/docs/Part6/5.1.2/).
 
-### Command Payload
+### `MethodCall` Command Payload
 
 Executes a command on an OPC UA server that must be in the UA Cloud Commander's network, example parameters:
 

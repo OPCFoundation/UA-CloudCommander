@@ -270,7 +270,7 @@ namespace Opc.Ua.Cloud.Commander
                     response.Status = new UAClient().ReadUAVariable(_uAApplication, requestPayload);
                     response.Success = true;
                 }
-                else if (args.ApplicationMessage.Topic.StartsWith(requestTopic.TrimEnd('#') + "HistoryRead"))
+                else if (args.ApplicationMessage.Topic.StartsWith(requestTopic.TrimEnd('#') + "HistoricalRead"))
                 {
                     response.Status = new UAClient().ReadUAHistory(_uAApplication, requestPayload);
                     response.Success = true;
