@@ -260,22 +260,22 @@ namespace Opc.Ua.Cloud.Commander
                 response.CorrelationId = request.CorrelationId;
 
                 // route this to the right handler
-                if (args.ApplicationMessage.Topic.StartsWith(requestTopic.TrimEnd('#') + "MethodCall"))
+                if (request.Command == "MethodCall")
                 {
                     new UAClient().ExecuteUACommand(_uAApplication, requestPayload);
                     response.Success = true;
                 }
-                else if (args.ApplicationMessage.Topic.StartsWith(requestTopic.TrimEnd('#') + "Read"))
+                else if (request.Command == "Read")
                 {
                     response.Status = new UAClient().ReadUAVariable(_uAApplication, requestPayload);
                     response.Success = true;
                 }
-                else if (args.ApplicationMessage.Topic.StartsWith(requestTopic.TrimEnd('#') + "HistoricalRead"))
+                else if (request.Command == "HistoricalRead")
                 {
                     response.Status = new UAClient().ReadUAHistory(_uAApplication, requestPayload);
                     response.Success = true;
                 }
-                else if (args.ApplicationMessage.Topic.StartsWith(requestTopic.TrimEnd('#') + "Write"))
+                else if (request.Command == "Write")
                 {
                     new UAClient().WriteUAVariable(_uAApplication, requestPayload);
                     response.Success = true;

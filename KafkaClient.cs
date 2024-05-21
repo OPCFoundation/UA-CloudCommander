@@ -3,12 +3,9 @@ namespace Opc.Ua.Cloud.Commander
 {
     using Confluent.Kafka;
     using Newtonsoft.Json;
-    using Org.BouncyCastle.Asn1.Ocsp;
     using Serilog;
     using System;
-    using System.Collections.Generic;
     using System.Text;
-    using System.Threading;
     using System.Threading.Tasks;
 
     public class KafkaClient
@@ -106,25 +103,25 @@ namespace Opc.Ua.Cloud.Commander
                     response.CorrelationId = request.CorrelationId;
 
                     // route this to the right handler
-                    if (request.Command == "methodcall")
+                    if (request.Command == "MethodCall")
                     {
                         new UAClient().ExecuteUACommand(_appConfig, requestPayload);
                         Log.Logger.Information($"Call succeeded, sending response to broker...");
                         response.Success = true;
                     }
-                    else if (request.Command == "read")
+                    else if (request.Command == "Read")
                     {
                         response.Status = new UAClient().ReadUAVariable(_appConfig, requestPayload);
                         Log.Logger.Information($"Read succeeded, sending response to broker...");
                         response.Success = true;
                     }
-                    else if (request.Command == "historyread")
+                    else if (request.Command == "HistoricalRead")
                     {
                         response.Status = new UAClient().ReadUAHistory(_appConfig, requestPayload);
                         Log.Logger.Information($"History read succeeded, sending response to broker...");
                         response.Success = true;
                     }
-                    else if (request.Command == "write")
+                    else if (request.Command == "Write")
                     {
                         new UAClient().WriteUAVariable(_appConfig, requestPayload);
                         Log.Logger.Information($"Write succeeded, sending response to broker...");

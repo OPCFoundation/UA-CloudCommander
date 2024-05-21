@@ -51,7 +51,7 @@ Reads a UA Node on an OPC UA server that must be in the UA Cloud Commander's net
 
 ```json
 {
-    "Command": "read",
+    "Command": "Read",
     "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07", // a GUID
     "TimeStamp": "2022-11-28T12:01:00.0923534Z", // sender timestamp in UTC
     "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
@@ -65,7 +65,7 @@ Reads the histroy for a UA Node on an OPC UA server that must be in the UA Cloud
 
 ```json
 {
-    "Command": "read",
+    "Command": "HistorialRead",
     "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07", // a GUID
     "TimeStamp": "2022-11-28T12:01:00.0923534Z", // sender timestamp in UTC
     "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
@@ -81,7 +81,7 @@ Writes a UA Node on an OPC UA server that must be in the UA Cloud Commander's ne
 
 ```json
 {
-    "Command": "write",
+    "Command": "Write",
     "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07", // a GUID
     "TimeStamp": "2022-11-28T12:01:00.0923534Z", // sender timestamp in UTC
     "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
@@ -101,7 +101,7 @@ Executes a command on an OPC UA server that must be in the UA Cloud Commander's 
 
 ```json
 {
-    "Command": "methodcall",
+    "Command": "MethodCall",
     "CorrelationId": "D892A987-56FB-4724-AF14-5EC6A7EBDD07", // a GUID
     "TimeStamp": "2022-11-28T12:01:00.0923534Z", // sender timestamp in UTC
     "Endpoint": "opc.tcp://myopcserver.contoso/UA/",
