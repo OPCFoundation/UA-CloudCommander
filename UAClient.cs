@@ -146,6 +146,7 @@ namespace Opc.Ua.Cloud.Commander
         public string ReadUAHistory(ApplicationConfiguration appConfiguration, string payload)
         {
             Session session = null;
+            string result = string.Empty;
 
             try
             {
@@ -207,9 +208,13 @@ namespace Opc.Ua.Cloud.Commander
                 }
 
                 HistoryData values = ExtensionObject.ToEncodeable(results[0].HistoryData) as HistoryData;
+                foreach (DataValue value in values.DataValues)
+                {
+                    result += (value.ServerTimestamp.ToString() + '=' + value.ToString() + ',');
+                }
 
-                // release continuation points
-                if (results[0].ContinuationPoint != null && results[0].ContinuationPoint.Length > 0)
+                // read from the continuation points, if required
+                while (results[0].ContinuationPoint != null && results[0].ContinuationPoint.Length > 0)
                 {
                     nodeToRead.ContinuationPoint = results[0].ContinuationPoint;
 
@@ -221,12 +226,17 @@ namespace Opc.Ua.Cloud.Commander
                         nodesToRead,
                         out results,
                         out diagnosticInfos);
-                }
 
-                string result = string.Empty;
-                foreach(DataValue value in values.DataValues)
-                {
-                    result += (value.ToString() + ',');
+                    if (StatusCode.IsBad(results[0].StatusCode))
+                    {
+                        throw ServiceResultException.Create(results[0].StatusCode.Code, "Reading OPC UA node failed!");
+                    }
+
+                    values = ExtensionObject.ToEncodeable(results[0].HistoryData) as HistoryData;
+                    foreach (DataValue value in values.DataValues)
+                    {
+                        result += (value.ServerTimestamp.ToString() + '=' + value.ToString() + ',');
+                    }
                 }
 
                 return result.TrimEnd(',');
