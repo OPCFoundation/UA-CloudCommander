@@ -282,8 +282,8 @@ namespace Opc.Ua.Cloud.Commander
                 }
                 else
                 {
-                    Log.Logger.Error("Unknown command received: " + args.ApplicationMessage.Topic);
-                    response.Status = "Unkown command " + args.ApplicationMessage.Topic;
+                    Log.Logger.Error("Unknown command received: " + request.Command);
+                    response.Status = "Unkown command " + request.Command;
                     response.Success = false;
                 }
 
