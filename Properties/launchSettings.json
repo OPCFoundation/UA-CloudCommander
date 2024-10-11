@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "UACloudCommander": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "publishAllPorts": true
+    }
+  }
+}
