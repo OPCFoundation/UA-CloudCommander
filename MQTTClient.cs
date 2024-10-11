@@ -55,18 +55,18 @@ namespace Opc.Ua.Cloud.Commander
 
         public void Connect()
         {
-			string brokerName = Environment.GetEnvironmentVariable("BROKERNAME");
-            int brokerPort = int.Parse(Environment.GetEnvironmentVariable("BROKERPORT"));
-            string clientName = Environment.GetEnvironmentVariable("CLIENTNAME");
-            string userName = Environment.GetEnvironmentVariable("USERNAME");
-            string password = Environment.GetEnvironmentVariable("PASSWORD");
-            string topic = Environment.GetEnvironmentVariable("TOPIC");
-            bool createBrokerSASToken = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CREATE_SAS_PASSWORD"));
-            bool useTLS = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("USE_TLS"));
-            bool useUACertAuth = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("USE_UA_CERT_AUTH"));
-
             try
             {
+                string brokerName = Environment.GetEnvironmentVariable("BROKERNAME");
+                int brokerPort = int.Parse(Environment.GetEnvironmentVariable("BROKERPORT"));
+                string clientName = Environment.GetEnvironmentVariable("CLIENTNAME");
+                string userName = Environment.GetEnvironmentVariable("USERNAME");
+                string password = Environment.GetEnvironmentVariable("PASSWORD");
+                string topic = Environment.GetEnvironmentVariable("TOPIC");
+                bool createBrokerSASToken = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CREATE_SAS_PASSWORD"));
+                bool useTLS = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("USE_TLS"));
+                bool useUACertAuth = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("USE_UA_CERT_AUTH"));
+
                 // disconnect if still connected
                 if ((_client != null) && _client.IsConnected)
                 {

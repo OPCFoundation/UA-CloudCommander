@@ -9,6 +9,7 @@
     <PackageId>UACloudCommander</PackageId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
+    <DockerfileRunArguments>-p 4840:4840</DockerfileRunArguments>
   </PropertyGroup>
 
   <ItemGroup>
