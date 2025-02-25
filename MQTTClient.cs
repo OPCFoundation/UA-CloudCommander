@@ -3,7 +3,7 @@ namespace Opc.Ua.Cloud.Commander
 {
     using MQTTnet;
     using MQTTnet.Adapter;
-    using MQTTnet.Client;
+    using MQTTnet.Exceptions;
     using MQTTnet.Packets;
     using MQTTnet.Protocol;
     using Newtonsoft.Json;
@@ -96,7 +96,7 @@ namespace Opc.Ua.Cloud.Commander
                 }
 
                 // create MQTT client
-                _client = new MqttFactory().CreateMqttClient();
+                _client = new MqttClientFactory().CreateMqttClient();
                 _client.ApplicationMessageReceivedAsync += msg => HandleMessageAsync(msg);
 
                 MqttClientOptionsBuilder clientOptions = new MqttClientOptionsBuilder()
@@ -189,14 +189,14 @@ namespace Opc.Ua.Cloud.Commander
 
                     Log.Logger.Information("Connected to MQTT broker.");
                 }
-                catch (MqttConnectingFailedException ex)
+                catch (MqttCommunicationException ex)
                 {
-                    Log.Logger.Error($"Failed to connect with reason {ex.ResultCode} and message: {ex.Message}");
-                    if (ex.Result?.UserProperties != null)
+                    Log.Logger.Error($"Failed to connect with reason {ex.HResult} and message: {ex.Message}");
+                    if ((ex.Data != null) && (ex.Data.Count > 0))
                     {
-                        foreach (var prop in ex.Result.UserProperties)
+                        foreach (var prop in ex.Data)
                         {
-                            Log.Logger.Error($"{prop.Name}: {prop.Value}");
+                            Log.Logger.Error($"{prop.ToString()}");
                         }
                     }
                 }

@@ -337,7 +337,7 @@ namespace Opc.Ua.Cloud.Commander
             }
 
             // find endpoint on a local OPC UA server
-            EndpointDescription endpointDescription = CoreClientUtils.SelectEndpoint(serverEndpoint, true);
+            EndpointDescription endpointDescription = CoreClientUtils.SelectEndpoint(appConfiguration, serverEndpoint, true);
             ConfiguredEndpoint endpoint = new ConfiguredEndpoint(null, endpointDescription, EndpointConfiguration.Create());
 
             // check which identity to use

@@ -43,7 +43,7 @@ namespace Opc.Ua.Cloud.Commander
             _traceMasks = app.ApplicationConfiguration.TraceConfiguration.TraceMasks;
             Utils.Tracing.TraceEventHandler += new EventHandler<TraceEventArgs>(OpcStackLoggingHandler);
 
-            bool certOK = await app.CheckApplicationInstanceCertificate(false, 0).ConfigureAwait(false);
+            bool certOK = await app.CheckApplicationInstanceCertificates(false, 0).ConfigureAwait(false);
             if (!certOK)
             {
                 throw new Exception("Application instance certificate invalid!");
@@ -52,7 +52,7 @@ namespace Opc.Ua.Cloud.Commander
             // create OPC UA cert validator
             app.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
             app.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OPCUAServerCertificateValidationCallback);
-            app.ApplicationConfiguration.CertificateValidator.Update(app.ApplicationConfiguration.SecurityConfiguration).GetAwaiter().GetResult();
+            app.ApplicationConfiguration.CertificateValidator.Update(app.ApplicationConfiguration).GetAwaiter().GetResult();
 
             string issuerPath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "issuer", "certs");
             if (!Directory.Exists(issuerPath))
