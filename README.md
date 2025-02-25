@@ -1,6 +1,6 @@
 # UA Cloud Commander
 
-A cross-platform, cloud-based OPC UA command & control reference implementation leveraging MQTT and Kafka. It runs in a Docker container on-premises (on Docker or Kubernetes) and executes OPC UA commands, reads and writes OPC UA variables and supports Historical Data Access (HDA) for on-premises OPC UA servers, executed from the cloud.
+A cross-platform, .Net9.0-based OPC UA command & control reference implementation leveraging MQTT and Kafka. It runs in a Docker container on-premises (on Docker or Kubernetes) and executes OPC UA commands, reads and writes OPC UA variables and supports Historical Data Access (HDA) for on-premises OPC UA servers, executed from the cloud.
 
 ## Configuration
 
