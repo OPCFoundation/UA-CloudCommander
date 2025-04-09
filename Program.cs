@@ -48,7 +48,7 @@ namespace Opc.Ua.Cloud.Commander
             {
                 throw new Exception("Application instance certificate invalid!");
             }
-            
+
             // create OPC UA cert validator
             app.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
             app.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OPCUAServerCertificateValidationCallback);
@@ -62,7 +62,7 @@ namespace Opc.Ua.Cloud.Commander
 
             // start the server.
             app.Start(new UAServer()).GetAwaiter().GetResult();
-            Serilog.Log.Logger.Information("Server started.");
+            Log.Logger.Information("Server started.");
 
             MQTTClient methodHandlerMQTT = null;
             KafkaClient methodHandlerKafka = null;
@@ -78,7 +78,7 @@ namespace Opc.Ua.Cloud.Commander
                 methodHandlerMQTT.Connect();
             }
 
-            Serilog.Log.Logger.Information("UA Cloud Commander is running.");
+            Log.Logger.Information("UA Cloud Commander is running.");
 
             await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
         }
@@ -125,8 +125,8 @@ namespace Opc.Ua.Cloud.Commander
             loggerConfiguration.WriteTo.Console();
             loggerConfiguration.WriteTo.File(Path.Combine(pathToLogFile, "uacloudcommander.logfile.txt"), fileSizeLimitBytes: 1024 * 1024, rollOnFileSizeLimit: true, retainedFileCountLimit: 10);
 
-            Serilog.Log.Logger = loggerConfiguration.CreateLogger();
-            Serilog.Log.Logger.Information($"Log file is: {Path.Combine(pathToLogFile, "uacloudcommander.logfile.txt")}");
+            Log.Logger = loggerConfiguration.CreateLogger();
+            Log.Logger.Information($"Log file is: {Path.Combine(pathToLogFile, "uacloudcommander.logfile.txt")}");
         }
     }
 }

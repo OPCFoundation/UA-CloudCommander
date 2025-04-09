@@ -2,7 +2,6 @@
 namespace Opc.Ua.Cloud.Commander
 {
     using MQTTnet;
-    using MQTTnet.Adapter;
     using MQTTnet.Exceptions;
     using MQTTnet.Packets;
     using MQTTnet.Protocol;
@@ -149,11 +148,14 @@ namespace Opc.Ua.Cloud.Commander
                     // wait a 5 seconds, then simply reconnect again, if needed
                     Task.Delay(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
 
-                    MqttClientConnectResult connectResult = _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).GetAwaiter().GetResult();
-                    if (connectResult.ResultCode != MqttClientConnectResultCode.Success)
+                    if (!_client.IsConnected)
                     {
-                        string status = GetStatus(connectResult.UserProperties)?.ToString("x4");
-                        throw new Exception($"Connection to MQTT broker failed. Status: {connectResult.ResultCode}; status: {status}");
+                        MqttClientConnectResult connectResult = _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).GetAwaiter().GetResult();
+                        if (connectResult.ResultCode != MqttClientConnectResultCode.Success)
+                        {
+                            string status = GetStatus(connectResult.UserProperties)?.ToString("x4");
+                            throw new Exception($"Connection to MQTT broker failed. Status: {connectResult.ResultCode}; status: {status}");
+                        }
                     }
 
                     return Task.CompletedTask;
@@ -221,7 +223,12 @@ namespace Opc.Ua.Cloud.Commander
         // parses status from packet properties
         private int? GetStatus(List<MqttUserProperty> properties)
         {
-            var status = properties.FirstOrDefault(up => up.Name == "status");
+            if (properties == null)
+            {
+                return null;
+            }
+
+            MqttUserProperty status = properties.FirstOrDefault(up => up.Name == "status");
             if (status == null)
             {
                 return null;
