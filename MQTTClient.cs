@@ -269,7 +269,7 @@ namespace Opc.Ua.Cloud.Commander
                 // route this to the right handler
                 if (request.Command == "MethodCall")
                 {
-                    new UAClient().ExecuteUACommand(_uAApplication, requestPayload);
+                    response.Status = new UAClient().ExecuteUACommand(_uAApplication, requestPayload);
                     response.Success = true;
                 }
                 else if (request.Command == "Read")

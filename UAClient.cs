@@ -9,7 +9,7 @@ namespace Opc.Ua.Cloud.Commander
 
     public class UAClient
     {
-        public void ExecuteUACommand(ApplicationConfiguration appConfiguration, string payload)
+        public string ExecuteUACommand(ApplicationConfiguration appConfiguration, string payload)
         {
             Session session = null;
 
@@ -66,6 +66,18 @@ namespace Opc.Ua.Cloud.Commander
                 {
                     throw new ServiceResultException(new ServiceResult(results[0].StatusCode, 0, diagnosticInfos, responseHeader.StringTable));
                 }
+
+                // put the results in a comma-seperated string
+                string result = string.Empty;
+                if ((results?.Count > 0) && (results[0].OutputArguments != null) && (results[0].OutputArguments.Count > 0))
+                {
+                    foreach (Variant argument in results[0].OutputArguments)
+                    {
+                        result += argument.ToString() + ',';
+                    }
+                }
+
+                return result.TrimEnd(',');
             }
             catch (Exception ex)
             {

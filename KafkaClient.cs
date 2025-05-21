@@ -105,7 +105,7 @@ namespace Opc.Ua.Cloud.Commander
                     // route this to the right handler
                     if (request.Command == "MethodCall")
                     {
-                        new UAClient().ExecuteUACommand(_appConfig, requestPayload);
+                        response.Status = new UAClient().ExecuteUACommand(_appConfig, requestPayload);
                         Log.Logger.Information($"Call succeeded, sending response to broker...");
                         response.Success = true;
                     }
