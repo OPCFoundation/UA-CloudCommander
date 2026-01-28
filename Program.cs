@@ -41,6 +41,8 @@ namespace Opc.Ua.Cloud.Commander
 
             // hook up OPC UA stack traces
             _traceMasks = app.ApplicationConfiguration.TraceConfiguration.TraceMasks;
+
+            // TODO: switch to new logging mechanism
             Utils.Tracing.TraceEventHandler += new EventHandler<TraceEventArgs>(OpcStackLoggingHandler);
 
             bool certOK = await app.CheckApplicationInstanceCertificatesAsync(false, 0).ConfigureAwait(false);
