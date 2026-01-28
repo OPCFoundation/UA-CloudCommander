@@ -3,7 +3,9 @@ namespace Opc.Ua.Cloud.Commander
 {
     using Opc.Ua;
     using Opc.Ua.Server;
+    using Serilog;
     using System;
+    using System.Text;
 
     public partial class UAServer : StandardServer
     {
@@ -29,21 +31,21 @@ namespace Opc.Ua.Cloud.Commander
             server.SessionManager.ImpersonateUser += new ImpersonateEventHandler(SessionManager_ImpersonateUser);
         }
 
-        private void SessionManager_ImpersonateUser(Session session, ImpersonateEventArgs args)
+        private void SessionManager_ImpersonateUser(ISession session, ImpersonateEventArgs args)
         {
             UserNameIdentityToken userNameToken = args.NewIdentity as UserNameIdentityToken;
             if (userNameToken != null)
             {
                 args.Identity = VerifyPassword(userNameToken);
 
-                Utils.LogInfo(Utils.TraceMasks.Security, "Username token accepted: {0}", args.Identity?.DisplayName);
+                Log.Logger.Information("Username token accepted: {0}", args.Identity?.DisplayName);
                 return;
             }
 
             AnonymousIdentityToken anonymousToken = args.NewIdentity as AnonymousIdentityToken;
             if (anonymousToken != null)
             {
-                Utils.LogInfo(Utils.TraceMasks.Security, "Anonymous token accepted: {0}", args.Identity?.DisplayName);
+                Log.Logger.Information("Anonymous token accepted: {0}", args.Identity?.DisplayName);
                 return;
             }
 
@@ -53,7 +55,7 @@ namespace Opc.Ua.Cloud.Commander
         private IUserIdentity VerifyPassword(UserNameIdentityToken userNameToken)
         {
             var userName = userNameToken.UserName;
-            var password = userNameToken.DecryptedPassword;
+            var password = Encoding.UTF8.GetString(userNameToken.DecryptedPassword);
 
             if (string.IsNullOrEmpty(userName))
             {
@@ -78,19 +80,10 @@ namespace Opc.Ua.Cloud.Commander
                 return new SystemConfigurationIdentity(new UserIdentity(userNameToken));
             }
 
-            // construct translation object with default text.
-            TranslationInfo info = new TranslationInfo(
-                "InvalidPassword",
-                "en-US",
-                "Invalid username or password.",
-                userName);
-
             // create an exception with a vendor defined sub-code.
-            throw new ServiceResultException(new ServiceResult(
+            throw new ServiceResultException(new StatusCode(
                 StatusCodes.BadUserAccessDenied,
-                "InvalidPassword",
-                LoadServerProperties().ProductUri,
-                new LocalizedText(info)));
+                "InvalidPassword"));
         }
     }
 }

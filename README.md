@@ -22,6 +22,7 @@ The following environment variables are optional:
 * UA_USERNAME - Username for the OPC UA server to connect to
 * UA_PASSWORD - Password for the OPC UA server to connect to
 * USE_KAFKA - Use Kafka instead of MQTT for communication
+* USE_NATS - Use NATS instead of MQTT for communication
 * STORAGE_CONNECTION_STRING - The connection string to the cloud-based OPC UA certificate store.
 * STORAGE_CONTAINER_NAME - The cloud-based OPC UA certificate store container name.
 * APPNAME - An alternative name for UA Cloud Commander.

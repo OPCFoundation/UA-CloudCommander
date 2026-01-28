@@ -15,6 +15,12 @@
       <StorePath>./pki/own</StorePath>
       <SubjectName>CN=UndefinedAppName</SubjectName>
     </ApplicationCertificate>
+    <CertificateIdentifier>
+      <StoreType>Directory</StoreType>
+      <StorePath>./pki/own</StorePath>
+      <SubjectName>CN=UndefinedAppName</SubjectName>
+      <CertificateTypeString>RsaSha256</CertificateTypeString>
+    </CertificateIdentifier>
     <TrustedIssuerCertificates>
       <StoreType>Directory</StoreType>
       <StorePath>./pki/issuer</StorePath>
@@ -28,6 +34,7 @@
       <StoreType>Directory</StoreType>
       <StorePath>./pki/rejected</StorePath>
     </RejectedCertificateStore>
+    <AutoAcceptUntrustedCertificates>false</AutoAcceptUntrustedCertificates>
     <RejectSHA1SignedCertificates>false</RejectSHA1SignedCertificates>
     <MinimumCertificateKeySize>1024</MinimumCertificateKeySize>
     <SendCertificateChain>false</SendCertificateChain>
@@ -61,7 +68,7 @@
     <SecurityPolicies>
       <ServerSecurityPolicy>
         <SecurityMode>SignAndEncrypt_3</SecurityMode>
-        <SecurityPolicyUri></SecurityPolicyUri>
+        <SecurityPolicyUri>http://opcfoundation.org/UA/SecurityPolicy#Basic256Sha256</SecurityPolicyUri>
       </ServerSecurityPolicy>
     </SecurityPolicies>
 
@@ -80,7 +87,7 @@
       <ua:UserTokenPolicy>
         <ua:TokenType>UserName_1</ua:TokenType>
         <!-- passwords must be encrypted - this specifies what algorithm to use -->
-        <ua:SecurityPolicyUri>http://opcfoundation.org/UA/SecurityPolicy#Basic256</ua:SecurityPolicyUri>
+        <ua:SecurityPolicyUri>http://opcfoundation.org/UA/SecurityPolicy#Basic256Sha256</ua:SecurityPolicyUri>
       </ua:UserTokenPolicy>
     </UserTokenPolicies>
 

@@ -25,7 +25,7 @@ namespace Opc.Ua.Cloud.Commander
                 appName = Environment.GetEnvironmentVariable("APPNAME");
             }
 
-            ApplicationInstance app = new ApplicationInstance
+            ApplicationInstance app = new ApplicationInstance((ITelemetryContext)null)
             {
                 ApplicationName = appName,
                 ApplicationType = ApplicationType.ClientAndServer,
@@ -37,22 +37,22 @@ namespace Opc.Ua.Cloud.Commander
             fileContent = fileContent.Replace("UndefinedAppName", appName);
             File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "UA.Cloud.Commander.Config.xml"), fileContent);
 
-            await app.LoadApplicationConfiguration(false).ConfigureAwait(false);
+            await app.LoadApplicationConfigurationAsync(false).ConfigureAwait(false);
 
             // hook up OPC UA stack traces
             _traceMasks = app.ApplicationConfiguration.TraceConfiguration.TraceMasks;
             Utils.Tracing.TraceEventHandler += new EventHandler<TraceEventArgs>(OpcStackLoggingHandler);
 
-            bool certOK = await app.CheckApplicationInstanceCertificates(false, 0).ConfigureAwait(false);
+            bool certOK = await app.CheckApplicationInstanceCertificatesAsync(false, 0).ConfigureAwait(false);
             if (!certOK)
             {
                 throw new Exception("Application instance certificate invalid!");
             }
 
             // create OPC UA cert validator
-            app.ApplicationConfiguration.CertificateValidator = new CertificateValidator();
+            app.ApplicationConfiguration.CertificateValidator = new CertificateValidator(null);
             app.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OPCUAServerCertificateValidationCallback);
-            app.ApplicationConfiguration.CertificateValidator.Update(app.ApplicationConfiguration).GetAwaiter().GetResult();
+            app.ApplicationConfiguration.CertificateValidator.UpdateAsync(app.ApplicationConfiguration).GetAwaiter().GetResult();
 
             string issuerPath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "issuer", "certs");
             if (!Directory.Exists(issuerPath))
@@ -61,15 +61,21 @@ namespace Opc.Ua.Cloud.Commander
             }
 
             // start the server.
-            app.Start(new UAServer()).GetAwaiter().GetResult();
+            app.StartAsync(new UAServer()).GetAwaiter().GetResult();
             Log.Logger.Information("Server started.");
 
             MQTTClient methodHandlerMQTT = null;
             KafkaClient methodHandlerKafka = null;
+            NATSClient methodHandlerNATS = null;
             if (Environment.GetEnvironmentVariable("USE_KAFKA") != null)
             {
                 methodHandlerKafka = new KafkaClient(app.ApplicationConfiguration);
                 methodHandlerKafka.Connect();
+            }
+            else if (Environment.GetEnvironmentVariable("USE_NATS") != null)
+            {
+                methodHandlerNATS = new NATSClient(app.ApplicationConfiguration);
+                methodHandlerNATS.Connect();
             }
             else
             {
@@ -89,11 +95,11 @@ namespace Opc.Ua.Cloud.Commander
             {
                 if (e.Arguments != null)
                 {
-                    Console.WriteLine("OPC UA Stack: " + string.Format(CultureInfo.InvariantCulture, e.Format, e.Arguments).Trim());
+                    Log.Logger.Information("OPC UA Stack: " + string.Format(CultureInfo.InvariantCulture, e.Format, e.Arguments).Trim());
                 }
                 else
                 {
-                    Console.WriteLine("OPC UA Stack: " + e.Format.Trim());
+                    Log.Logger.Information("OPC UA Stack: " + e.Format.Trim());
                 }
             }
         }

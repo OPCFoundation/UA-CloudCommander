@@ -6,16 +6,18 @@ namespace Opc.Ua.Cloud.Commander
     using Opc.Ua.Client.ComplexTypes;
     using Serilog;
     using System;
+    using System.Text;
+    using System.Threading;
 
     public class UAClient
     {
         public string ExecuteUACommand(ApplicationConfiguration appConfiguration, string payload)
         {
-            Session session = null;
+            ISession session = null;
 
             try
             {
-                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext());
+                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext(null));
 
                 string serverEndpoint = decoder.ReadString("Endpoint");
                 session = CreateSession(appConfiguration, serverEndpoint);
@@ -53,25 +55,21 @@ namespace Opc.Ua.Cloud.Commander
                     request
                 };
 
-                CallMethodResultCollection results;
-                DiagnosticInfoCollection diagnosticInfos;
-
-                ResponseHeader responseHeader = session.Call(
+                CallResponse response = session.CallAsync(
                     null,
                     requests,
-                    out results,
-                    out diagnosticInfos);
+                    CancellationToken.None).GetAwaiter().GetResult();
 
-                if (StatusCode.IsBad(results[0].StatusCode))
+                if (StatusCode.IsBad(response.Results[0].StatusCode))
                 {
-                    throw new ServiceResultException(new ServiceResult(results[0].StatusCode, 0, diagnosticInfos, responseHeader.StringTable));
+                    throw new ServiceResultException(new ServiceResult(response.Results[0].StatusCode, 0, response.DiagnosticInfos, response.ResponseHeader.StringTable));
                 }
 
                 // put the results in a comma-seperated string
                 string result = string.Empty;
-                if ((results?.Count > 0) && (results[0].OutputArguments != null) && (results[0].OutputArguments.Count > 0))
+                if ((response.Results?.Count > 0) && (response.Results[0].OutputArguments != null) && (response.Results[0].OutputArguments.Count > 0))
                 {
-                    foreach (Variant argument in results[0].OutputArguments)
+                    foreach (Variant argument in response.Results[0].OutputArguments)
                     {
                         result += argument.ToString() + ',';
                     }
@@ -90,7 +88,7 @@ namespace Opc.Ua.Cloud.Commander
                 {
                     if (session.Connected)
                     {
-                        session.Close();
+                        session.CloseAsync().GetAwaiter().GetResult();
                     }
 
                     session.Dispose();
@@ -100,11 +98,11 @@ namespace Opc.Ua.Cloud.Commander
 
         public string ReadUAVariable(ApplicationConfiguration appConfiguration, string payload)
         {
-            Session session = null;
+            ISession session = null;
 
             try
             {
-                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext());
+                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext(null));
 
                 string serverEndpoint = decoder.ReadString("Endpoint");
                 session = CreateSession(appConfiguration, serverEndpoint);
@@ -120,15 +118,15 @@ namespace Opc.Ua.Cloud.Commander
                 ExpandedNodeId nodeID = ExpandedNodeId.Parse(expandedNodeID);
 
                 // read a variable node from the OPC UA server
-                VariableNode node = (VariableNode)session.ReadNode(ExpandedNodeId.ToNodeId(nodeID, session.NamespaceUris));
+                VariableNode node = (VariableNode)session.ReadNodeAsync(ExpandedNodeId.ToNodeId(nodeID, session.NamespaceUris)).GetAwaiter().GetResult();
 
                 // load complex type system
                 ComplexTypeSystem complexTypeSystem = new ComplexTypeSystem(session);
                 ExpandedNodeId nodeTypeId = node.DataType;
-                complexTypeSystem.LoadType(nodeTypeId).GetAwaiter().GetResult();
+                complexTypeSystem.LoadTypeAsync(nodeTypeId).GetAwaiter().GetResult();
 
                 // now that we have loaded the (potentionally) complex type, we can read the value
-                DataValue value = session.ReadValue(ExpandedNodeId.ToNodeId(nodeID, session.NamespaceUris));
+                DataValue value = session.ReadValueAsync(ExpandedNodeId.ToNodeId(nodeID, session.NamespaceUris)).GetAwaiter().GetResult();
                 if (StatusCode.IsBad(value.StatusCode))
                 {
                     throw ServiceResultException.Create(value.StatusCode.Code, "Reading OPC UA node failed!");
@@ -147,7 +145,7 @@ namespace Opc.Ua.Cloud.Commander
                 {
                     if (session.Connected)
                     {
-                        session.Close();
+                        session.CloseAsync().GetAwaiter().GetResult();
                     }
 
                     session.Dispose();
@@ -157,12 +155,12 @@ namespace Opc.Ua.Cloud.Commander
 
         public string ReadUAHistory(ApplicationConfiguration appConfiguration, string payload)
         {
-            Session session = null;
+            ISession session = null;
             string result = string.Empty;
 
             try
             {
-                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext());
+                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext(null));
 
                 string serverEndpoint = decoder.ReadString("Endpoint");
                 session = CreateSession(appConfiguration, serverEndpoint);
@@ -181,12 +179,12 @@ namespace Opc.Ua.Cloud.Commander
                 ExpandedNodeId nodeID = ExpandedNodeId.Parse(expandedNodeID);
 
                 // read a variable node from the OPC UA server
-                VariableNode node = (VariableNode)session.ReadNode(ExpandedNodeId.ToNodeId(nodeID, session.NamespaceUris));
+                VariableNode node = (VariableNode)session.ReadNodeAsync(ExpandedNodeId.ToNodeId(nodeID, session.NamespaceUris)).GetAwaiter().GetResult();
 
                 // load complex type system
                 ComplexTypeSystem complexTypeSystem = new(session);
                 ExpandedNodeId nodeTypeId = node.DataType;
-                complexTypeSystem.LoadType(nodeTypeId).GetAwaiter().GetResult();
+                complexTypeSystem.LoadTypeAsync(nodeTypeId).GetAwaiter().GetResult();
 
                 // now that we have loaded the (potentionally) complex type, we can read the history
                 ReadRawModifiedDetails details = new()
@@ -205,46 +203,45 @@ namespace Opc.Ua.Cloud.Commander
                 };
                 nodesToRead.Add(nodeToRead);
 
-                session.HistoryRead(
+                HistoryReadResponse response = session.HistoryReadAsync(
                     null,
                     new ExtensionObject(details),
                     TimestampsToReturn.Both,
                     false,
                     nodesToRead,
-                    out HistoryReadResultCollection results,
-                    out DiagnosticInfoCollection diagnosticInfos);
+                    CancellationToken.None
+                    ).GetAwaiter().GetResult();
 
-                if (StatusCode.IsBad(results[0].StatusCode))
+                if (StatusCode.IsBad(response.Results[0].StatusCode))
                 {
-                    throw ServiceResultException.Create(results[0].StatusCode.Code, "Reading OPC UA node failed!");
+                    throw ServiceResultException.Create(response.Results[0].StatusCode.Code, "Reading OPC UA node failed!");
                 }
 
-                HistoryData values = ExtensionObject.ToEncodeable(results[0].HistoryData) as HistoryData;
+                HistoryData values = ExtensionObject.ToEncodeable(response.Results[0].HistoryData) as HistoryData;
                 foreach (DataValue value in values.DataValues)
                 {
                     result += (value.ServerTimestamp.ToString() + '=' + value.ToString() + ',');
                 }
 
                 // read from the continuation points, if required
-                while (results[0].ContinuationPoint != null && results[0].ContinuationPoint.Length > 0)
+                while (response.Results[0].ContinuationPoint != null && response.Results[0].ContinuationPoint.Length > 0)
                 {
-                    nodeToRead.ContinuationPoint = results[0].ContinuationPoint;
+                    nodeToRead.ContinuationPoint = response.Results[0].ContinuationPoint;
 
-                    session.HistoryRead(
+                    HistoryReadResponse continuedResponse = session.HistoryReadAsync(
                         null,
                         new ExtensionObject(details),
                         TimestampsToReturn.Neither,
                         true,
                         nodesToRead,
-                        out results,
-                        out diagnosticInfos);
+                        CancellationToken.None).GetAwaiter().GetResult();
 
-                    if (StatusCode.IsBad(results[0].StatusCode))
+                    if (StatusCode.IsBad(continuedResponse.Results[0].StatusCode))
                     {
-                        throw ServiceResultException.Create(results[0].StatusCode.Code, "Reading OPC UA node failed!");
+                        throw ServiceResultException.Create(continuedResponse.Results[0].StatusCode.Code, "Reading OPC UA node failed!");
                     }
 
-                    values = ExtensionObject.ToEncodeable(results[0].HistoryData) as HistoryData;
+                    values = ExtensionObject.ToEncodeable(continuedResponse.Results[0].HistoryData) as HistoryData;
                     foreach (DataValue value in values.DataValues)
                     {
                         result += (value.ServerTimestamp.ToString() + '=' + value.ToString() + ',');
@@ -264,7 +261,7 @@ namespace Opc.Ua.Cloud.Commander
                 {
                     if (session.Connected)
                     {
-                        session.Close();
+                        session.CloseAsync().GetAwaiter().GetResult();
                     }
 
                     session.Dispose();
@@ -274,11 +271,11 @@ namespace Opc.Ua.Cloud.Commander
 
         public void WriteUAVariable(ApplicationConfiguration appConfiguration, string payload)
         {
-            Session session = null;
+            ISession session = null;
 
             try
             {
-                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext());
+                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext(null));
 
                 string serverEndpoint = decoder.ReadString("Endpoint");
                 session = CreateSession(appConfiguration, serverEndpoint);
@@ -307,18 +304,17 @@ namespace Opc.Ua.Cloud.Commander
                 StatusCodeCollection results = null;
                 DiagnosticInfoCollection diagnosticInfos = null;
 
-                ResponseHeader responseHeader = session.Write(
+                WriteResponse response = session.WriteAsync(
                     null,
                     nodesToWrite,
-                    out results,
-                    out diagnosticInfos);
+                    CancellationToken.None).GetAwaiter().GetResult();
 
                 ClientBase.ValidateResponse(results, nodesToWrite);
                 ClientBase.ValidateDiagnosticInfos(diagnosticInfos, nodesToWrite);
 
-                if (StatusCode.IsBad(results[0]))
+                if (StatusCode.IsBad(response.Results[0].Code))
                 {
-                    throw ServiceResultException.Create(results[0], 0, diagnosticInfos, responseHeader.StringTable);
+                    throw ServiceResultException.Create(response.Results[0].Code, 0, response.DiagnosticInfos, response.ResponseHeader.StringTable);
                 }
             }
             catch (Exception ex)
@@ -332,7 +328,7 @@ namespace Opc.Ua.Cloud.Commander
                 {
                     if (session.Connected)
                     {
-                        session.Close();
+                        session.CloseAsync().GetAwaiter().GetResult();
                     }
 
                     session.Dispose();
@@ -340,7 +336,7 @@ namespace Opc.Ua.Cloud.Commander
             }
         }
 
-        private Session CreateSession(ApplicationConfiguration appConfiguration, string serverEndpoint)
+        private ISession CreateSession(ApplicationConfiguration appConfiguration, string serverEndpoint)
         {
             if (string.IsNullOrEmpty(serverEndpoint))
             {
@@ -349,19 +345,19 @@ namespace Opc.Ua.Cloud.Commander
             }
 
             // find endpoint on a local OPC UA server
-            EndpointDescription endpointDescription = CoreClientUtils.SelectEndpoint(appConfiguration, serverEndpoint, true);
+            EndpointDescription endpointDescription = CoreClientUtils.SelectEndpointAsync(appConfiguration, serverEndpoint, true, null).GetAwaiter().GetResult();
             ConfiguredEndpoint endpoint = new ConfiguredEndpoint(null, endpointDescription, EndpointConfiguration.Create());
 
             // check which identity to use
             UserIdentity userIdentity = new UserIdentity(new AnonymousIdentityToken());
             if ((Environment.GetEnvironmentVariable("UA_USERNAME") != null) && (Environment.GetEnvironmentVariable("UA_PASSWORD") != null))
             {
-                userIdentity = new UserIdentity(Environment.GetEnvironmentVariable("UA_USERNAME"), Environment.GetEnvironmentVariable("UA_PASSWORD"));
+                userIdentity = new UserIdentity(Environment.GetEnvironmentVariable("UA_USERNAME"), Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("UA_PASSWORD")));
             }
 
             Log.Logger.Information("Creating secure session for endpoint {endpointUrl}.", endpoint.EndpointUrl);
 
-            Session session = Session.Create(
+            ISession session = new DefaultSessionFactory(null).CreateAsync(
                 appConfiguration,
                 endpoint,
                 true,
