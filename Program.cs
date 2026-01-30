@@ -5,14 +5,13 @@ namespace Opc.Ua.Cloud.Commander
     using Opc.Ua.Configuration;
     using Serilog;
     using System;
-    using System.Globalization;
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
 
     public class Program
     {
-        private static int _traceMasks = 1; // default to errors only
+        public static ConsoleTelemetry telemetry = new();
 
         public static async Task Main()
         {
@@ -25,7 +24,9 @@ namespace Opc.Ua.Cloud.Commander
                 appName = Environment.GetEnvironmentVariable("APPNAME");
             }
 
-            ApplicationInstance app = new ApplicationInstance((ITelemetryContext)null)
+            ApplicationInstance.MessageDlg = new ApplicationMessageDlg();
+
+            ApplicationInstance app = new ApplicationInstance(telemetry)
             {
                 ApplicationName = appName,
                 ApplicationType = ApplicationType.ClientAndServer,
@@ -39,12 +40,6 @@ namespace Opc.Ua.Cloud.Commander
 
             await app.LoadApplicationConfigurationAsync(false).ConfigureAwait(false);
 
-            // hook up OPC UA stack traces
-            _traceMasks = app.ApplicationConfiguration.TraceConfiguration.TraceMasks;
-
-            // TODO: switch to new logging mechanism
-            Utils.Tracing.TraceEventHandler += new EventHandler<TraceEventArgs>(OpcStackLoggingHandler);
-
             bool certOK = await app.CheckApplicationInstanceCertificatesAsync(false, 0).ConfigureAwait(false);
             if (!certOK)
             {
@@ -52,7 +47,7 @@ namespace Opc.Ua.Cloud.Commander
             }
 
             // create OPC UA cert validator
-            app.ApplicationConfiguration.CertificateValidator = new CertificateValidator(null);
+            app.ApplicationConfiguration.CertificateValidator = new CertificateValidator(telemetry);
             app.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OPCUAServerCertificateValidationCallback);
             app.ApplicationConfiguration.CertificateValidator.UpdateAsync(app.ApplicationConfiguration).GetAwaiter().GetResult();
 
@@ -89,21 +84,6 @@ namespace Opc.Ua.Cloud.Commander
             Log.Logger.Information("UA Cloud Commander is running.");
 
             await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
-        }
-
-        private static void OpcStackLoggingHandler(object sender, TraceEventArgs e)
-        {
-            if ((e.TraceMask & _traceMasks) != 0)
-            {
-                if (e.Arguments != null)
-                {
-                    Log.Logger.Information("OPC UA Stack: " + string.Format(CultureInfo.InvariantCulture, e.Format, e.Arguments).Trim());
-                }
-                else
-                {
-                    Log.Logger.Information("OPC UA Stack: " + e.Format.Trim());
-                }
-            }
         }
 
         private static void OPCUAServerCertificateValidationCallback(CertificateValidator validator, CertificateValidationEventArgs e)
