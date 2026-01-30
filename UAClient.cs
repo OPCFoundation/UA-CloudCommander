@@ -17,7 +17,7 @@ namespace Opc.Ua.Cloud.Commander
 
             try
             {
-                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext(Program.telemetry));
+                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext(Program.Telemetry));
 
                 string serverEndpoint = decoder.ReadString("Endpoint");
                 session = CreateSession(appConfiguration, serverEndpoint);
@@ -102,7 +102,7 @@ namespace Opc.Ua.Cloud.Commander
 
             try
             {
-                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext(Program.telemetry));
+                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext(Program.Telemetry));
 
                 string serverEndpoint = decoder.ReadString("Endpoint");
                 session = CreateSession(appConfiguration, serverEndpoint);
@@ -160,7 +160,7 @@ namespace Opc.Ua.Cloud.Commander
 
             try
             {
-                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext(Program.telemetry));
+                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext(Program.Telemetry));
 
                 string serverEndpoint = decoder.ReadString("Endpoint");
                 session = CreateSession(appConfiguration, serverEndpoint);
@@ -275,7 +275,7 @@ namespace Opc.Ua.Cloud.Commander
 
             try
             {
-                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext(Program.telemetry));
+                JsonDecoder decoder = new JsonDecoder(payload, new ServiceMessageContext(Program.Telemetry));
 
                 string serverEndpoint = decoder.ReadString("Endpoint");
                 session = CreateSession(appConfiguration, serverEndpoint);
@@ -345,7 +345,7 @@ namespace Opc.Ua.Cloud.Commander
             }
 
             // find endpoint on a local OPC UA server
-            EndpointDescription endpointDescription = CoreClientUtils.SelectEndpointAsync(appConfiguration, serverEndpoint, true, Program.telemetry).GetAwaiter().GetResult();
+            EndpointDescription endpointDescription = CoreClientUtils.SelectEndpointAsync(appConfiguration, serverEndpoint, true, Program.Telemetry).GetAwaiter().GetResult();
             ConfiguredEndpoint endpoint = new ConfiguredEndpoint(null, endpointDescription, EndpointConfiguration.Create());
 
             // check which identity to use
@@ -357,7 +357,7 @@ namespace Opc.Ua.Cloud.Commander
 
             Log.Logger.Information("Creating secure session for endpoint {endpointUrl}.", endpoint.EndpointUrl);
 
-            ISession session = new DefaultSessionFactory(Program.telemetry).CreateAsync(
+            ISession session = new DefaultSessionFactory(Program.Telemetry).CreateAsync(
                 appConfiguration,
                 endpoint,
                 true,

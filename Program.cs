@@ -11,7 +11,7 @@ namespace Opc.Ua.Cloud.Commander
 
     public class Program
     {
-        public static ConsoleTelemetry telemetry = new();
+        public static ConsoleTelemetry Telemetry = new();
 
         public static async Task Main()
         {
@@ -26,7 +26,7 @@ namespace Opc.Ua.Cloud.Commander
 
             ApplicationInstance.MessageDlg = new ApplicationMessageDlg();
 
-            ApplicationInstance app = new ApplicationInstance(telemetry)
+            ApplicationInstance app = new ApplicationInstance(Telemetry)
             {
                 ApplicationName = appName,
                 ApplicationType = ApplicationType.ClientAndServer,
@@ -47,7 +47,7 @@ namespace Opc.Ua.Cloud.Commander
             }
 
             // create OPC UA cert validator
-            app.ApplicationConfiguration.CertificateValidator = new CertificateValidator(telemetry);
+            app.ApplicationConfiguration.CertificateValidator = new CertificateValidator(Telemetry);
             app.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OPCUAServerCertificateValidationCallback);
             app.ApplicationConfiguration.CertificateValidator.UpdateAsync(app.ApplicationConfiguration).GetAwaiter().GetResult();
 
