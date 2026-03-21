@@ -32,6 +32,7 @@ using Serilog;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Opc.Ua.Cloud
@@ -40,11 +41,36 @@ namespace Opc.Ua.Cloud
     {
         public ConsoleTelemetry(Action<ILoggingBuilder> configure = null)
         {
+            string logDirectory = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+            if (!Directory.Exists(logDirectory))
+            {
+                Directory.CreateDirectory(logDirectory);
+            }
+
+            string logFilePath = Path.Combine(logDirectory, "uacloudcommander.logfile.txt");
+
+            Log.Logger = new LoggerConfiguration()
+#if DEBUG
+                .MinimumLevel.Debug()
+#else
+                .MinimumLevel.Information()
+#endif
+                .WriteTo.Console()
+                .WriteTo.File(
+                    logFilePath,
+                    fileSizeLimitBytes: 1024 * 1024,
+                    rollOnFileSizeLimit: true,
+                    retainedFileCountLimit: 10)
+                .CreateLogger();
+
+            Log.Logger.Information("Log file is: {LogFilePath}", logFilePath);
+
             LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
             {
                 builder.SetMinimumLevel(LogLevel.Information);
+                builder.AddSerilog(Log.Logger, dispose: false);
                 configure?.Invoke(builder);
-            }).AddSerilog(Log.Logger);
+            });
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += Unobserved_TaskException;
@@ -61,6 +87,7 @@ namespace Opc.Ua.Cloud
             CreateMeter().Dispose();
             ActivitySource.Dispose();
             LoggerFactory?.Dispose();
+            Log.CloseAndFlush();
 
             AppDomain.CurrentDomain.UnhandledException -= CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException -= Unobserved_TaskException;

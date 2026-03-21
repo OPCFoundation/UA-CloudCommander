@@ -15,8 +15,6 @@ namespace Opc.Ua.Cloud.Commander
 
         public static async Task Main()
         {
-            InitLogging(Directory.GetCurrentDirectory());
-
             // create OPC UA client app
             string appName = "UACloudCommander";
             if (Environment.GetEnvironmentVariable("APPNAME") != null)
@@ -93,28 +91,6 @@ namespace Opc.Ua.Cloud.Commander
             {
                 e.Accept = true;
             }
-        }
-
-        private static void InitLogging(string pathToLogFile)
-        {
-            LoggerConfiguration loggerConfiguration = new LoggerConfiguration();
-
-#if DEBUG
-            loggerConfiguration.MinimumLevel.Debug();
-#else
-            loggerConfiguration.MinimumLevel.Information();
-#endif
-            if (!Directory.Exists(pathToLogFile))
-            {
-                Directory.CreateDirectory(pathToLogFile);
-            }
-
-            // set logging sinks
-            loggerConfiguration.WriteTo.Console();
-            loggerConfiguration.WriteTo.File(Path.Combine(pathToLogFile, "uacloudcommander.logfile.txt"), fileSizeLimitBytes: 1024 * 1024, rollOnFileSizeLimit: true, retainedFileCountLimit: 10);
-
-            Log.Logger = loggerConfiguration.CreateLogger();
-            Log.Logger.Information($"Log file is: {Path.Combine(pathToLogFile, "uacloudcommander.logfile.txt")}");
         }
     }
 }
