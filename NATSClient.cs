@@ -1,5 +1,4 @@
-﻿
-namespace Opc.Ua.Cloud.Commander
+﻿namespace Opc.Ua.Cloud.Commander
 {
     using NATS.Client.Core;
     using Newtonsoft.Json;
@@ -21,7 +20,7 @@ namespace Opc.Ua.Cloud.Commander
             _uaApplication = uaApplication;
         }
 
-        public void Connect()
+        public async Task ConnectAsync()
         {
             try
             {
@@ -44,6 +43,7 @@ namespace Opc.Ua.Cloud.Commander
                 if (_conn != null)
                 {
                     _cts.Cancel();
+                    await _conn.DisposeAsync().ConfigureAwait(false);
                     _cts.Dispose();
                     _cts = new CancellationTokenSource();
                     _conn = null;
@@ -82,7 +82,7 @@ namespace Opc.Ua.Cloud.Commander
 
                 _conn = new NatsConnection(opts);
 
-                _ = Task.Run(() => HandleCommand(subjectFilter, responseTopic, _cts.Token));
+                _ = Task.Run(async () => await HandleCommand(subjectFilter, responseTopic, _cts.Token).ConfigureAwait(false));
 
                 Log.Logger.Information("Connected to NATS broker and subscribed on {Subject}", subjectFilter);
             }
@@ -127,22 +127,22 @@ namespace Opc.Ua.Cloud.Commander
 
                 if (request.Command == "MethodCall")
                 {
-                    response.Status = new UAClient().ExecuteUACommand(_uaApplication, payload);
+                    response.Status = await new UAClient().ExecuteUACommandAsync(_uaApplication, payload).ConfigureAwait(false);
                     response.Success = true;
                 }
                 else if (request.Command == "Read")
                 {
-                    response.Status = new UAClient().ReadUAVariable(_uaApplication, payload);
+                    response.Status = await new UAClient().ReadUAVariableAsync(_uaApplication, payload).ConfigureAwait(false);
                     response.Success = true;
                 }
                 else if (request.Command == "HistoricalRead")
                 {
-                    response.Status = new UAClient().ReadUAHistory(_uaApplication, payload);
+                    response.Status = await new UAClient().ReadUAHistoryAsync(_uaApplication, payload).ConfigureAwait(false);
                     response.Success = true;
                 }
                 else if (request.Command == "Write")
                 {
-                    new UAClient().WriteUAVariable(_uaApplication, payload);
+                    await new UAClient().WriteUAVariableAsync(_uaApplication, payload).ConfigureAwait(false);
                     response.Success = true;
                 }
                 else

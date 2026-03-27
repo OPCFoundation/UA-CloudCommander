@@ -78,13 +78,18 @@ namespace Opc.Ua.Cloud
 
         public ILoggerFactory LoggerFactory { get; internal set; }
 
-        public Meter CreateMeter() => new("UA cloud app", "1.0.0");
+        private readonly Lazy<Meter> _meter = new(() => new Meter("UA cloud app", "1.0.0"));
+        public Meter CreateMeter() => _meter.Value;
 
         public ActivitySource ActivitySource { get; } = new("UA cloud app", "1.0.0");
 
         public void Dispose()
         {
-            CreateMeter().Dispose();
+            if (_meter.IsValueCreated)
+            {
+                _meter.Value.Dispose();
+            }
+
             ActivitySource.Dispose();
             LoggerFactory?.Dispose();
             Log.CloseAndFlush();

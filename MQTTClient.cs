@@ -1,5 +1,4 @@
-﻿
-namespace Opc.Ua.Cloud.Commander
+﻿namespace Opc.Ua.Cloud.Commander
 {
     using MQTTnet;
     using MQTTnet.Exceptions;
@@ -52,7 +51,7 @@ namespace Opc.Ua.Cloud.Commander
             }
         }
 
-        public void Connect()
+        public async Task ConnectAsync()
         {
             try
             {
@@ -67,10 +66,15 @@ namespace Opc.Ua.Cloud.Commander
                 bool useUACertAuth = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("USE_UA_CERT_AUTH"));
 
                 // disconnect if still connected
-                if ((_client != null) && _client.IsConnected)
+                if (_client != null)
                 {
-                    _client.DisconnectAsync().GetAwaiter().GetResult();
+                    if (_client.IsConnected)
+                    {
+                        await _client.DisconnectAsync().ConfigureAwait(false);
+                    }
 
+                    _client.Dispose();
+                    _client = null;
                     _cancellationTokenSource.Cancel();
                 }
 
@@ -89,7 +93,7 @@ namespace Opc.Ua.Cloud.Commander
                     int week = 60 * 60 * 24 * 7;
                     string expiry = Convert.ToString((int)sinceEpoch.TotalSeconds + week);
                     string stringToSign = HttpUtility.UrlEncode(brokerName + "/devices/" + clientName) + "\n" + expiry;
-                    HMACSHA256 hmac = new HMACSHA256(Convert.FromBase64String(password));
+                    using HMACSHA256 hmac = new HMACSHA256(Convert.FromBase64String(password));
                     string signature = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(stringToSign)));
                     password = "SharedAccessSignature sr=" + HttpUtility.UrlEncode(brokerName + "/devices/" + clientName) + "&sig=" + HttpUtility.UrlEncode(signature) + "&se=" + expiry;
                 }
@@ -141,24 +145,22 @@ namespace Opc.Ua.Cloud.Commander
                 }
 
                 // setup disconnection handling
-                _client.DisconnectedAsync += disconnectArgs =>
+                _client.DisconnectedAsync += async disconnectArgs =>
                 {
                     Log.Logger.Warning($"Disconnected from MQTT broker: {disconnectArgs.Reason}");
 
                     // wait a 5 seconds, then simply reconnect again, if needed
-                    Task.Delay(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+                    await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
                     if (!_client.IsConnected)
                     {
-                        MqttClientConnectResult connectResult = _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).GetAwaiter().GetResult();
+                        MqttClientConnectResult connectResult = await _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).ConfigureAwait(false);
                         if (connectResult.ResultCode != MqttClientConnectResultCode.Success)
                         {
                             string status = GetStatus(connectResult.UserProperties)?.ToString("x4");
                             throw new Exception($"Connection to MQTT broker failed. Status: {connectResult.ResultCode}; status: {status}");
                         }
                     }
-
-                    return Task.CompletedTask;
                 };
 
                 try
@@ -166,7 +168,7 @@ namespace Opc.Ua.Cloud.Commander
                     _cancellationTokenSource.Dispose();
                     _cancellationTokenSource = new CancellationTokenSource();
 
-                    MqttClientConnectResult connectResult = _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).GetAwaiter().GetResult();
+                    MqttClientConnectResult connectResult = await _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).ConfigureAwait(false);
                     if (connectResult.ResultCode != MqttClientConnectResultCode.Success)
                     {
                         string status = GetStatus(connectResult.UserProperties)?.ToString("x4");
@@ -175,12 +177,12 @@ namespace Opc.Ua.Cloud.Commander
 
                     if (!string.IsNullOrEmpty(topic))
                     {
-                        MqttClientSubscribeResult subscribeResult = _client.SubscribeAsync(
+                        MqttClientSubscribeResult subscribeResult = await _client.SubscribeAsync(
                         new MqttTopicFilter
                         {
                             Topic = topic,
                             QualityOfServiceLevel = MqttQualityOfServiceLevel.AtMostOnce
-                        }).GetAwaiter().GetResult();
+                        }).ConfigureAwait(false);
 
                         // make sure subscriptions were successful
                         if (subscribeResult.Items.Count != 1 || subscribeResult.Items.ElementAt(0).ResultCode != MqttClientSubscribeResultCode.GrantedQoS0)
@@ -269,22 +271,22 @@ namespace Opc.Ua.Cloud.Commander
                 // route this to the right handler
                 if (request.Command == "MethodCall")
                 {
-                    response.Status = new UAClient().ExecuteUACommand(_uAApplication, requestPayload);
+                    response.Status = await new UAClient().ExecuteUACommandAsync(_uAApplication, requestPayload).ConfigureAwait(false);
                     response.Success = true;
                 }
                 else if (request.Command == "Read")
                 {
-                    response.Status = new UAClient().ReadUAVariable(_uAApplication, requestPayload);
+                    response.Status = await new UAClient().ReadUAVariableAsync(_uAApplication, requestPayload).ConfigureAwait(false);
                     response.Success = true;
                 }
                 else if (request.Command == "HistoricalRead")
                 {
-                    response.Status = new UAClient().ReadUAHistory(_uAApplication, requestPayload);
+                    response.Status = await new UAClient().ReadUAHistoryAsync(_uAApplication, requestPayload).ConfigureAwait(false);
                     response.Success = true;
                 }
                 else if (request.Command == "Write")
                 {
-                    new UAClient().WriteUAVariable(_uAApplication, requestPayload);
+                    await new UAClient().WriteUAVariableAsync(_uAApplication, requestPayload).ConfigureAwait(false);
                     response.Success = true;
                 }
                 else

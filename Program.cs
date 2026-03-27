@@ -47,7 +47,7 @@ namespace Opc.Ua.Cloud.Commander
             // create OPC UA cert validator
             app.ApplicationConfiguration.CertificateValidator = new CertificateValidator(Telemetry);
             app.ApplicationConfiguration.CertificateValidator.CertificateValidation += new CertificateValidationEventHandler(OPCUAServerCertificateValidationCallback);
-            app.ApplicationConfiguration.CertificateValidator.UpdateAsync(app.ApplicationConfiguration).GetAwaiter().GetResult();
+            await app.ApplicationConfiguration.CertificateValidator.UpdateAsync(app.ApplicationConfiguration).ConfigureAwait(false);
 
             string issuerPath = Path.Combine(Directory.GetCurrentDirectory(), "pki", "issuer", "certs");
             if (!Directory.Exists(issuerPath))
@@ -56,7 +56,7 @@ namespace Opc.Ua.Cloud.Commander
             }
 
             // start the server.
-            app.StartAsync(new UAServer()).GetAwaiter().GetResult();
+            await app.StartAsync(new UAServer()).ConfigureAwait(false);
             Log.Logger.Information("Server started.");
 
             MQTTClient methodHandlerMQTT = null;
@@ -70,13 +70,13 @@ namespace Opc.Ua.Cloud.Commander
             else if (Environment.GetEnvironmentVariable("USE_NATS") != null)
             {
                 methodHandlerNATS = new NATSClient(app.ApplicationConfiguration);
-                methodHandlerNATS.Connect();
+                await methodHandlerNATS.ConnectAsync().ConfigureAwait(false);
             }
             else
             {
                 // connect to the MQTT broker
                 methodHandlerMQTT = new MQTTClient(app.ApplicationConfiguration);
-                methodHandlerMQTT.Connect();
+                await methodHandlerMQTT.ConnectAsync().ConfigureAwait(false);
             }
 
             Log.Logger.Information("UA Cloud Commander is running.");

@@ -1,19 +1,20 @@
-﻿
-namespace Opc.Ua.Cloud.Commander
+﻿namespace Opc.Ua.Cloud.Commander
 {
     using Confluent.Kafka;
     using Newtonsoft.Json;
     using Serilog;
     using System;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
 
-    public class KafkaClient
+    public class KafkaClient : IDisposable
     {
         private ApplicationConfiguration _appConfig = null;
 
         private IProducer<Null, string> _producer = null;
         private IConsumer<Ignore, byte[]> _consumer = null;
+        private CancellationTokenSource _cts = new();
 
         public KafkaClient(ApplicationConfiguration appConfig)
         {
@@ -24,6 +25,12 @@ namespace Opc.Ua.Cloud.Commander
         {
             try
             {
+                // delete old producer/consumer instances if they exist
+                _consumer?.Close();   // commits offsets, leaves consumer group
+                _consumer?.Dispose();
+                _producer?.Flush(TimeSpan.FromSeconds(5));
+                _producer?.Dispose();
+
                 // create Kafka client
                 var config = new ProducerConfig {
                     BootstrapServers = Environment.GetEnvironmentVariable("BROKERNAME") + ":9093",
@@ -51,7 +58,7 @@ namespace Opc.Ua.Cloud.Commander
 
                 _consumer.Subscribe(Environment.GetEnvironmentVariable("TOPIC"));
 
-                _ = Task.Run(() => HandleCommand());
+                _ = Task.Run(async () => await HandleCommandAsync().ConfigureAwait(false));
 
                 Log.Logger.Information("Connected to Kafka broker.");
 
@@ -62,7 +69,7 @@ namespace Opc.Ua.Cloud.Commander
             }
         }
 
-        public void Publish(string payload)
+        public async Task PublishAsync(string payload)
         {
             Message<Null, string> message = new()
             {
@@ -70,13 +77,13 @@ namespace Opc.Ua.Cloud.Commander
                 Value = payload
             };
 
-            _producer.ProduceAsync(Environment.GetEnvironmentVariable("RESPONSE_TOPIC"), message).GetAwaiter().GetResult();
+            await _producer.ProduceAsync(Environment.GetEnvironmentVariable("RESPONSE_TOPIC"), message).ConfigureAwait(false);
         }
 
         // handles all incoming commands form the cloud
-        private void HandleCommand()
+        private async Task HandleCommandAsync()
         {
-            while (true)
+            while (!_cts.Token.IsCancellationRequested)
             {
                 ResponseModel response = new()
                 {
@@ -105,25 +112,25 @@ namespace Opc.Ua.Cloud.Commander
                     // route this to the right handler
                     if (request.Command == "MethodCall")
                     {
-                        response.Status = new UAClient().ExecuteUACommand(_appConfig, requestPayload);
+                        response.Status = await new UAClient().ExecuteUACommandAsync(_appConfig, requestPayload).ConfigureAwait(false);
                         Log.Logger.Information($"Call succeeded, sending response to broker...");
                         response.Success = true;
                     }
                     else if (request.Command == "Read")
                     {
-                        response.Status = new UAClient().ReadUAVariable(_appConfig, requestPayload);
+                        response.Status = await new UAClient().ReadUAVariableAsync(_appConfig, requestPayload).ConfigureAwait(false);
                         Log.Logger.Information($"Read succeeded, sending response to broker...");
                         response.Success = true;
                     }
                     else if (request.Command == "HistoricalRead")
                     {
-                        response.Status = new UAClient().ReadUAHistory(_appConfig, requestPayload);
+                        response.Status = await new UAClient().ReadUAHistoryAsync(_appConfig, requestPayload).ConfigureAwait(false);
                         Log.Logger.Information($"History read succeeded, sending response to broker...");
                         response.Success = true;
                     }
                     else if (request.Command == "Write")
                     {
-                        new UAClient().WriteUAVariable(_appConfig, requestPayload);
+                        await new UAClient().WriteUAVariableAsync(_appConfig, requestPayload).ConfigureAwait(false);
                         Log.Logger.Information($"Write succeeded, sending response to broker...");
                         response.Success = true;
                     }
@@ -135,7 +142,7 @@ namespace Opc.Ua.Cloud.Commander
                     }
 
                     // send reponse to Kafka broker
-                    Publish(JsonConvert.SerializeObject(response));
+                    await PublishAsync(JsonConvert.SerializeObject(response)).ConfigureAwait(false);
                     Log.Logger.Information($"Response sent to broker.");
                 }
                 catch (Exception ex)
@@ -145,9 +152,19 @@ namespace Opc.Ua.Cloud.Commander
                     response.Success = false;
 
                     // send error to Kafka broker
-                    Publish(JsonConvert.SerializeObject(response));
+                    await PublishAsync(JsonConvert.SerializeObject(response)).ConfigureAwait(false);
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _consumer?.Close();   // commits offsets, leaves consumer group
+            _consumer?.Dispose();
+            _producer?.Flush(TimeSpan.FromSeconds(5));
+            _producer?.Dispose();
+            _cts.Dispose();
         }
     }
 }
