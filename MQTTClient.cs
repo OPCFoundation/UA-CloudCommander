@@ -4,7 +4,6 @@
     using MQTTnet.Exceptions;
     using MQTTnet.Packets;
     using MQTTnet.Protocol;
-    using Newtonsoft.Json;
     using Serilog;
     using System;
     using System.Collections.Generic;
@@ -211,14 +210,12 @@
             }
         }
 
-        private MqttApplicationMessage BuildResponse(string status, string id, byte[] payload)
+        private static MqttApplicationMessage BuildResponse(string responseTopic, string payload)
         {
-            string responseTopic = Environment.GetEnvironmentVariable("RESPONSE_TOPIC");
-
             return new MqttApplicationMessageBuilder()
                 .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
-                .WithTopic($"{responseTopic}/{status}/{id}")
-                .WithPayload(payload)
+                .WithTopic(responseTopic)
+                .WithPayload(Encoding.UTF8.GetBytes(payload))
                 .Build();
         }
 
@@ -244,69 +241,26 @@
         {
             Log.Logger.Information($"Received cloud command with topic: {args.ApplicationMessage.Topic} and payload: {args.ApplicationMessage.ConvertPayloadToString()}");
 
-            string requestTopic = Environment.GetEnvironmentVariable("TOPIC");
-            string requestID = args.ApplicationMessage.Topic.Substring(args.ApplicationMessage.Topic.IndexOf("?"));
-
-            ResponseModel response = new()
-            {
-                TimeStamp = DateTime.UtcNow,
-            };
-
             try
             {
                 string requestPayload = args.ApplicationMessage.ConvertPayloadToString();
 
-                // parse the message
-                RequestModel request = JsonConvert.DeserializeObject<RequestModel>(requestPayload);
-
-                // discard messages that are older than 15 seconds
-                if (request.TimeStamp < DateTime.UtcNow.AddSeconds(-15))
+                // execute the spec-compliant OPC UA PubSub ActionRequest and build the ActionResponse
+                PubSubActionResult result = await PubSubActionHandler.ProcessRequestAsync(_uAApplication, requestPayload).ConfigureAwait(false);
+                if (!result.ShouldRespond)
                 {
-                    Log.Logger.Information($"Discarding old message with timestamp {request.TimeStamp}");
                     return;
                 }
 
-                response.CorrelationId = request.CorrelationId;
+                // the Requestor's ResponseAddress takes precedence over the configured response topic
+                string responseTopic = result.ResponseAddress ?? Environment.GetEnvironmentVariable("RESPONSE_TOPIC");
 
-                // route this to the right handler
-                if (request.Command == "MethodCall")
-                {
-                    response.Status = await new UAClient().ExecuteUACommandAsync(_uAApplication, requestPayload).ConfigureAwait(false);
-                    response.Success = true;
-                }
-                else if (request.Command == "Read")
-                {
-                    response.Status = await new UAClient().ReadUAVariableAsync(_uAApplication, requestPayload).ConfigureAwait(false);
-                    response.Success = true;
-                }
-                else if (request.Command == "HistoricalRead")
-                {
-                    response.Status = await new UAClient().ReadUAHistoryAsync(_uAApplication, requestPayload).ConfigureAwait(false);
-                    response.Success = true;
-                }
-                else if (request.Command == "Write")
-                {
-                    await new UAClient().WriteUAVariableAsync(_uAApplication, requestPayload).ConfigureAwait(false);
-                    response.Success = true;
-                }
-                else
-                {
-                    Log.Logger.Error("Unknown command received: " + request.Command);
-                    response.Status = "Unkown command " + request.Command;
-                    response.Success = false;
-                }
-
-                // send reponse to MQTT broker
-                await _client.PublishAsync(BuildResponse("200", requestID, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(response))), _cancellationTokenSource.Token).ConfigureAwait(false);
+                // send the ActionResponse NetworkMessage to the MQTT broker
+                await _client.PublishAsync(BuildResponse(responseTopic, result.ResponseJson), _cancellationTokenSource.Token).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Log.Logger.Error(ex, "HandleMessageAsync");
-                response.Status = ex.Message;
-                response.Success = false;
-
-                // send error to MQTT broker
-                await _client.PublishAsync(BuildResponse("500", requestID, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(response))), _cancellationTokenSource.Token).ConfigureAwait(false);
             }
         }
     }

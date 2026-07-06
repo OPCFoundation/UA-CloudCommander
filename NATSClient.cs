@@ -1,7 +1,6 @@
 ﻿namespace Opc.Ua.Cloud.Commander
 {
     using NATS.Client.Core;
-    using Newtonsoft.Json;
     using Serilog;
     using System;
     using System.Security.Cryptography.X509Certificates;
@@ -107,80 +106,27 @@
         {
             Log.Logger.Information("Received cloud command with subject: {Subject} and payload: {Payload}", subject, payload);
 
-            ResponseModel response = new()
-            {
-                TimeStamp = DateTime.UtcNow,
-            };
-
             try
             {
-                RequestModel request = JsonConvert.DeserializeObject<RequestModel>(payload);
-
-                // Discard messages older than 15 seconds.
-                if (request.TimeStamp < DateTime.UtcNow.AddSeconds(-15))
+                // execute the spec-compliant OPC UA PubSub ActionRequest and build the ActionResponse
+                PubSubActionResult actionResult = await PubSubActionHandler.ProcessRequestAsync(_uaApplication, payload).ConfigureAwait(false);
+                if (!actionResult.ShouldRespond)
                 {
-                    Log.Logger.Information("Discarding old message with timestamp {TimeStamp}", request.TimeStamp);
                     return;
                 }
 
-                response.CorrelationId = request.CorrelationId;
+                // the Requestor's ResponseAddress takes precedence over the configured response subject
+                string responseSubject = MqttTopicToNatsSubject(actionResult.ResponseAddress ?? responseSubjectBase);
 
-                if (request.Command == "MethodCall")
-                {
-                    response.Status = await new UAClient().ExecuteUACommandAsync(_uaApplication, payload).ConfigureAwait(false);
-                    response.Success = true;
-                }
-                else if (request.Command == "Read")
-                {
-                    response.Status = await new UAClient().ReadUAVariableAsync(_uaApplication, payload).ConfigureAwait(false);
-                    response.Success = true;
-                }
-                else if (request.Command == "HistoricalRead")
-                {
-                    response.Status = await new UAClient().ReadUAHistoryAsync(_uaApplication, payload).ConfigureAwait(false);
-                    response.Success = true;
-                }
-                else if (request.Command == "Write")
-                {
-                    await new UAClient().WriteUAVariableAsync(_uaApplication, payload).ConfigureAwait(false);
-                    response.Success = true;
-                }
-                else
-                {
-                    response.Success = false;
-                    response.Status = "Unknown command " + request.Command;
-                }
-
-                // Build a response subject similar to MQTT response topic:
-                // RESPONSE_TOPIC.<status>.<rid>
-                var rid = ExtractRidFromSubject(subject) ?? Guid.NewGuid().ToString("N");
-                var responseSubject = $"{MqttTopicToNatsSubject(responseSubjectBase)}.200.{rid}";
-
-                var json = JsonConvert.SerializeObject(response);
-                await _conn!.PublishAsync(responseSubject, Encoding.UTF8.GetBytes(json), cancellationToken: ct).ConfigureAwait(false);
+                // send the ActionResponse NetworkMessage to the NATS broker
+                await _conn!.PublishAsync(responseSubject, Encoding.UTF8.GetBytes(actionResult.ResponseJson), cancellationToken: ct).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                response.Success = false;
-                response.Status = ex.Message;
-
-                var rid = ExtractRidFromSubject(subject) ?? Guid.NewGuid().ToString("N");
-                var responseSubject = $"{MqttTopicToNatsSubject(responseSubjectBase)}.500.{rid}";
-
-                var json = JsonConvert.SerializeObject(response);
-                await _conn!.PublishAsync(responseSubject, Encoding.UTF8.GetBytes(json), cancellationToken: ct).ConfigureAwait(false);
-
                 Log.Logger.Error(ex, "HandleCommandAsync");
             }
         }
 
         private static string MqttTopicToNatsSubject(string mqtt) => mqtt.Replace("/", ".").Replace("#", ">").Replace("+", "*").Trim();
-
-        // if you include rid as last token of subject.
-        private static string ExtractRidFromSubject(string subject)
-        {
-            var parts = subject.Split('.', StringSplitOptions.RemoveEmptyEntries);
-            return parts.Length > 0 ? parts[^1] : null;
-        }
     }
 }

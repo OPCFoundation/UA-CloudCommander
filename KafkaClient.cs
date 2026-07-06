@@ -1,7 +1,6 @@
 ﻿namespace Opc.Ua.Cloud.Commander
 {
     using Confluent.Kafka;
-    using Newtonsoft.Json;
     using Serilog;
     using System;
     using System.Text;
@@ -69,7 +68,7 @@
             }
         }
 
-        public async Task PublishAsync(string payload)
+        public async Task PublishAsync(string topic, string payload)
         {
             Message<Null, string> message = new()
             {
@@ -77,7 +76,7 @@
                 Value = payload
             };
 
-            await _producer.ProduceAsync(Environment.GetEnvironmentVariable("RESPONSE_TOPIC"), message).ConfigureAwait(false);
+            await _producer.ProduceAsync(topic, message).ConfigureAwait(false);
         }
 
         // handles all incoming commands form the cloud
@@ -85,74 +84,30 @@
         {
             while (!_cts.Token.IsCancellationRequested)
             {
-                ResponseModel response = new()
-                {
-                    TimeStamp = DateTime.UtcNow,
-                };
-
                 try
                 {
                     ConsumeResult<Ignore, byte[]> result = _consumer.Consume();
 
                     string requestPayload = Encoding.UTF8.GetString(result.Message.Value);
-                    Log.Logger.Information($"Received method call with topic: {result.Topic} and payload: {requestPayload}");
+                    Log.Logger.Information($"Received command with topic: {result.Topic} and payload: {requestPayload}");
 
-                    // parse the message
-                    RequestModel request = JsonConvert.DeserializeObject<RequestModel>(requestPayload);
-
-                    // discard messages that are older than 15 seconds
-                    if (request.TimeStamp < DateTime.UtcNow.AddSeconds(-15))
+                    // execute the spec-compliant OPC UA PubSub ActionRequest and build the ActionResponse
+                    PubSubActionResult actionResult = await PubSubActionHandler.ProcessRequestAsync(_appConfig, requestPayload).ConfigureAwait(false);
+                    if (!actionResult.ShouldRespond)
                     {
-                        Log.Logger.Information($"Discarding old message with timestamp {request.TimeStamp}");
                         continue;
                     }
 
-                    response.CorrelationId = request.CorrelationId;
+                    // the Requestor's ResponseAddress takes precedence over the configured response topic
+                    string responseTopic = actionResult.ResponseAddress ?? Environment.GetEnvironmentVariable("RESPONSE_TOPIC");
 
-                    // route this to the right handler
-                    if (request.Command == "MethodCall")
-                    {
-                        response.Status = await new UAClient().ExecuteUACommandAsync(_appConfig, requestPayload).ConfigureAwait(false);
-                        Log.Logger.Information($"Call succeeded, sending response to broker...");
-                        response.Success = true;
-                    }
-                    else if (request.Command == "Read")
-                    {
-                        response.Status = await new UAClient().ReadUAVariableAsync(_appConfig, requestPayload).ConfigureAwait(false);
-                        Log.Logger.Information($"Read succeeded, sending response to broker...");
-                        response.Success = true;
-                    }
-                    else if (request.Command == "HistoricalRead")
-                    {
-                        response.Status = await new UAClient().ReadUAHistoryAsync(_appConfig, requestPayload).ConfigureAwait(false);
-                        Log.Logger.Information($"History read succeeded, sending response to broker...");
-                        response.Success = true;
-                    }
-                    else if (request.Command == "Write")
-                    {
-                        await new UAClient().WriteUAVariableAsync(_appConfig, requestPayload).ConfigureAwait(false);
-                        Log.Logger.Information($"Write succeeded, sending response to broker...");
-                        response.Success = true;
-                    }
-                    else
-                    {
-                        Log.Logger.Error("Unknown command received: " + request.Command);
-                        response.Status = "Unkown command " + request.Command;
-                        response.Success = false;
-                    }
-
-                    // send reponse to Kafka broker
-                    await PublishAsync(JsonConvert.SerializeObject(response)).ConfigureAwait(false);
-                    Log.Logger.Information($"Response sent to broker.");
+                    // send the ActionResponse NetworkMessage to the Kafka broker
+                    await PublishAsync(responseTopic, actionResult.ResponseJson).ConfigureAwait(false);
+                    Log.Logger.Information("Response sent to broker.");
                 }
                 catch (Exception ex)
                 {
-                    Log.Logger.Error(ex, "HandleMessageAsync");
-                    response.Status = ex.Message;
-                    response.Success = false;
-
-                    // send error to Kafka broker
-                    await PublishAsync(JsonConvert.SerializeObject(response)).ConfigureAwait(false);
+                    Log.Logger.Error(ex, "HandleCommandAsync");
                 }
             }
         }
