@@ -35,8 +35,8 @@
       <StorePath>./pki/rejected</StorePath>
     </RejectedCertificateStore>
     <AutoAcceptUntrustedCertificates>false</AutoAcceptUntrustedCertificates>
-    <RejectSHA1SignedCertificates>false</RejectSHA1SignedCertificates>
-    <MinimumCertificateKeySize>1024</MinimumCertificateKeySize>
+    <RejectSHA1SignedCertificates>true</RejectSHA1SignedCertificates>
+    <MinimumCertificateKeySize>2048</MinimumCertificateKeySize>
     <SendCertificateChain>false</SendCertificateChain>
     <UserIssuerCertificates>
       <StoreType>Directory</StoreType>
