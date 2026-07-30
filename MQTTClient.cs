@@ -63,6 +63,9 @@
                 bool createBrokerSASToken = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CREATE_SAS_PASSWORD"));
                 bool useTLS = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("USE_TLS"));
                 bool useUACertAuth = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("USE_UA_CERT_AUTH"));
+                // Accept broker certificates that fail chain validation (self-signed or signed by a
+                // private CA). Opt-in only, so certificate validation stays strict by default.
+                bool allowUntrustedBrokerCert = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ALLOW_UNTRUSTED_BROKER_CERT"));
 
                 // disconnect if still connected
                 if (_client != null)
@@ -104,7 +107,7 @@
                 MqttClientOptionsBuilder clientOptions = new MqttClientOptionsBuilder()
                         .WithTcpServer(brokerName, brokerPort)
                         .WithClientId(clientName)
-                        .WithTlsOptions(new MqttClientTlsOptions { UseTls = useTLS })
+                        .WithTlsOptions(BuildTlsOptions(useTLS, allowUntrustedBrokerCert))
                         .WithProtocolVersion(MQTTnet.Formatter.MqttProtocolVersion.V311)
                         .WithTimeout(TimeSpan.FromSeconds(10))
                         .WithKeepAlivePeriod(TimeSpan.FromSeconds(100))
@@ -116,7 +119,7 @@
                     clientOptions = new MqttClientOptionsBuilder()
                         .WithWebSocketServer( o => o.WithUri(brokerName))
                         .WithClientId(clientName)
-                        .WithTlsOptions(new MqttClientTlsOptions { UseTls = useTLS })
+                        .WithTlsOptions(BuildTlsOptions(useTLS, allowUntrustedBrokerCert))
                         .WithProtocolVersion(MQTTnet.Formatter.MqttProtocolVersion.V311)
                         .WithTimeout(TimeSpan.FromSeconds(10))
                         .WithKeepAlivePeriod(TimeSpan.FromSeconds(100))
@@ -208,6 +211,28 @@
             {
                 Log.Logger.Error("Failed to connect to MQTT broker: " + ex.Message);
             }
+        }
+
+        // Builds the TLS options for a broker connection. Note that setting AllowUntrustedCertificates and
+        // IgnoreCertificateChainErrors alone is not enough in MQTTnet: its default validation callback still
+        // rejects certificates (e.g. on hostname mismatch or an untrusted root), which surfaces as
+        // "The remote certificate was rejected by the provided RemoteCertificateValidationCallback".
+        // We therefore install an explicit validation handler when the user opted in to untrusted certificates.
+        private static MqttClientTlsOptions BuildTlsOptions(bool useTls, bool allowUntrusted)
+        {
+            MqttClientTlsOptions tlsOptions = new MqttClientTlsOptions
+            {
+                UseTls = useTls,
+                AllowUntrustedCertificates = allowUntrusted,
+                IgnoreCertificateChainErrors = allowUntrusted
+            };
+
+            if (allowUntrusted)
+            {
+                tlsOptions.CertificateValidationHandler = _ => true;
+            }
+
+            return tlsOptions;
         }
 
         private static MqttApplicationMessage BuildResponse(string responseTopic, string payload)
