@@ -45,6 +45,17 @@ namespace Opc.Ua.Cloud.Commander
             AnonymousIdentityToken anonymousToken = args.NewIdentity as AnonymousIdentityToken;
             if (anonymousToken != null)
             {
+                // Assign an identity object for anonymous sessions as well. Without this
+                // args.Identity stays null, so the session has no IUserIdentity at all and
+                // any privileged call made on it fails with BadUserAccessDenied before the
+                // role check can even run (see ConfigurationNodeManager.
+                // HasApplicationSecureAdminAccess). This matters for GDS Server Push: the
+                // push client connects anonymously and only elevates per operation. The
+                // anonymous identity deliberately carries no roles - privileged operations
+                // still require the username token, which VerifyPassword maps to
+                // SystemConfigurationIdentity (SecurityAdmin).
+                args.Identity = new UserIdentity(anonymousToken);
+
                 Log.Logger.Information("Anonymous token accepted: {0}", args.Identity?.DisplayName);
                 return;
             }
