@@ -20,8 +20,8 @@ The following environment variables are optional:
 * USE_TLS - Use TLS (usually, you also need to change the port from 1883 to 8883)
 * USE_UA_CERT_AUTH - Use the UA Certificate to authenticate with the MQTT broker
 * ALLOW_UNTRUSTED_BROKER_CERT - Accept MQTT broker certificates that fail chain validation, for example self-signed certificates or certificates issued by a private CA. Set it to any non-empty value to enable. This is opt-in only, so broker certificate validation stays strict by default. Only use this for testing, never in production.
-* UA_USERNAME - Username for the OPC UA server to connect to
-* UA_PASSWORD - Password for the OPC UA server to connect to
+* UA_USERNAME - Username for the built-in OPC UA server
+* UA_PASSWORD - Password for the built-in OPC UA server
 * USE_KAFKA - Use Kafka instead of MQTT for communication
 * USE_NATS - Use NATS instead of MQTT for communication
 * STORAGE_CONNECTION_STRING - The connection string to the cloud-based OPC UA certificate store.
