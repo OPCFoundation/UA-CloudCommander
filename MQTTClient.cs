@@ -156,53 +156,108 @@
 
                     if (!_client.IsConnected)
                     {
+                        // Never let an exception escape this handler. MQTTnet invokes it on its
+                        // own dispatch loop, so a throw here is unobserved and - more importantly -
+                        // no further DisconnectedAsync event is raised for this attempt, which
+                        // permanently ends the reconnect cycle. That turns a broker that is merely
+                        // slow to start (e.g. both come up together after a host reboot) into a
+                        // Commander that stays offline until it is manually restarted.
+                        try
+                        {
+                            MqttClientConnectResult connectResult = await _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).ConfigureAwait(false);
+                            if (connectResult.ResultCode != MqttClientConnectResultCode.Success)
+                            {
+                                string status = GetStatus(connectResult.UserProperties)?.ToString("x4");
+                                Log.Logger.Error($"Reconnect to MQTT broker failed. Status: {connectResult.ResultCode}; status: {status}. Retrying.");
+                            }
+                            else
+                            {
+                                // Subscriptions do not survive the reconnect: the session is opened
+                                // with CleanSession, so the broker discards them on disconnect.
+                                if (!string.IsNullOrEmpty(topic))
+                                {
+                                    await _client.SubscribeAsync(
+                                        new MqttTopicFilter
+                                        {
+                                            Topic = topic,
+                                            QualityOfServiceLevel = MqttQualityOfServiceLevel.AtMostOnce
+                                        }).ConfigureAwait(false);
+                                }
+
+                                Log.Logger.Information("Reconnected to MQTT broker.");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Logger.Error($"Reconnect to MQTT broker failed: {ex.Message}. Retrying.");
+                        }
+                    }
+                };
+
+                // A previous Disconnect() cancels the token source, so give this connection
+                // attempt a fresh one - otherwise ConnectAsync would fail immediately on an
+                // already-cancelled token.
+                _cancellationTokenSource.Dispose();
+                _cancellationTokenSource = new CancellationTokenSource();
+
+                // Retry the initial connect. There is no init container gating startup on the
+                // broker, so on a host reboot the Commander regularly starts before Mosquitto is
+                // listening. A single failed attempt would leave the process running but offline:
+                // MQTTnet only raises DisconnectedAsync for a connection that was previously
+                // established, so nothing would drive the reconnect handler.
+                int attempt = 0;
+                while (!_cancellationTokenSource.IsCancellationRequested)
+                {
+                    attempt++;
+                    try
+                    {
                         MqttClientConnectResult connectResult = await _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).ConfigureAwait(false);
                         if (connectResult.ResultCode != MqttClientConnectResultCode.Success)
                         {
                             string status = GetStatus(connectResult.UserProperties)?.ToString("x4");
                             throw new Exception($"Connection to MQTT broker failed. Status: {connectResult.ResultCode}; status: {status}");
                         }
-                    }
-                };
 
-                try
-                {
-                    _cancellationTokenSource.Dispose();
-                    _cancellationTokenSource = new CancellationTokenSource();
-
-                    MqttClientConnectResult connectResult = await _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).ConfigureAwait(false);
-                    if (connectResult.ResultCode != MqttClientConnectResultCode.Success)
-                    {
-                        string status = GetStatus(connectResult.UserProperties)?.ToString("x4");
-                        throw new Exception($"Connection to MQTT broker failed. Status: {connectResult.ResultCode}; status: {status}");
-                    }
-
-                    if (!string.IsNullOrEmpty(topic))
-                    {
-                        MqttClientSubscribeResult subscribeResult = await _client.SubscribeAsync(
-                        new MqttTopicFilter
+                        if (!string.IsNullOrEmpty(topic))
                         {
-                            Topic = topic,
-                            QualityOfServiceLevel = MqttQualityOfServiceLevel.AtMostOnce
-                        }).ConfigureAwait(false);
+                            MqttClientSubscribeResult subscribeResult = await _client.SubscribeAsync(
+                            new MqttTopicFilter
+                            {
+                                Topic = topic,
+                                QualityOfServiceLevel = MqttQualityOfServiceLevel.AtMostOnce
+                            }).ConfigureAwait(false);
 
-                        // make sure subscriptions were successful
-                        if (subscribeResult.Items.Count != 1 || subscribeResult.Items.ElementAt(0).ResultCode != MqttClientSubscribeResultCode.GrantedQoS0)
-                        {
-                            throw new ApplicationException("Failed to subscribe");
+                            // make sure subscriptions were successful
+                            if (subscribeResult.Items.Count != 1 || subscribeResult.Items.ElementAt(0).ResultCode != MqttClientSubscribeResultCode.GrantedQoS0)
+                            {
+                                throw new ApplicationException("Failed to subscribe");
+                            }
                         }
-                    }
 
-                    Log.Logger.Information("Connected to MQTT broker.");
-                }
-                catch (MqttCommunicationException ex)
-                {
-                    Log.Logger.Error($"Failed to connect with reason {ex.HResult} and message: {ex.Message}");
-                    if ((ex.Data != null) && (ex.Data.Count > 0))
+                        Log.Logger.Information("Connected to MQTT broker.");
+                        break;
+                    }
+                    catch (Exception ex)
                     {
-                        foreach (var prop in ex.Data)
+                        if (ex is MqttCommunicationException mqttEx && mqttEx.Data != null && mqttEx.Data.Count > 0)
                         {
-                            Log.Logger.Error($"{prop.ToString()}");
+                            foreach (var prop in mqttEx.Data)
+                            {
+                                Log.Logger.Error($"{prop.ToString()}");
+                            }
+                        }
+
+                        // Back off from 5s up to 60s so a broker that stays down does not fill the log.
+                        int delaySeconds = Math.Min(5 * attempt, 60);
+                        Log.Logger.Error($"Failed to connect to MQTT broker (attempt {attempt}): {ex.Message}. Retrying in {delaySeconds}s.");
+
+                        try
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(delaySeconds), _cancellationTokenSource.Token).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            break;
                         }
                     }
                 }
