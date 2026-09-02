@@ -20,6 +20,15 @@
     {
         private IMqttClient _client = null;
 
+        // Guards against concurrent reconnect attempts. MQTTnet raises DisconnectedAsync for EVERY
+        // failed ConnectAsync call, not only for a connection that was previously established. The
+        // handler below itself calls ConnectAsync, so without this gate each failure re-enters the
+        // handler and starts another attempt, which fails and re-enters again: the attempts multiply
+        // until many of them are calling ConnectAsync on the same client instance concurrently and
+        // MQTTnet rejects them all with "Not allowed to connect while connect/disconnect is
+        // pending", leaving the Commander permanently offline.
+        private int _reconnecting;
+
         private readonly ApplicationConfiguration _uAApplication;
 
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
@@ -149,48 +158,60 @@
                 // setup disconnection handling
                 _client.DisconnectedAsync += async disconnectArgs =>
                 {
-                    Log.Logger.Warning($"Disconnected from MQTT broker: {disconnectArgs.Reason}");
-
-                    // wait a 5 seconds, then simply reconnect again, if needed
-                    await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
-
-                    if (!_client.IsConnected)
+                    // Only one reconnect attempt at a time (see _reconnecting). MQTTnet raises this
+                    // event for every failed ConnectAsync below, so without the gate the handler
+                    // re-enters itself and the attempts multiply until they collide.
+                    if (Interlocked.CompareExchange(ref _reconnecting, 1, 0) != 0)
                     {
-                        // Never let an exception escape this handler. MQTTnet invokes it on its
-                        // own dispatch loop, so a throw here is unobserved and - more importantly -
-                        // no further DisconnectedAsync event is raised for this attempt, which
-                        // permanently ends the reconnect cycle. That turns a broker that is merely
-                        // slow to start (e.g. both come up together after a host reboot) into a
-                        // Commander that stays offline until it is manually restarted.
-                        try
-                        {
-                            MqttClientConnectResult connectResult = await _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).ConfigureAwait(false);
-                            if (connectResult.ResultCode != MqttClientConnectResultCode.Success)
-                            {
-                                string status = GetStatus(connectResult.UserProperties)?.ToString("x4");
-                                Log.Logger.Error($"Reconnect to MQTT broker failed. Status: {connectResult.ResultCode}; status: {status}. Retrying.");
-                            }
-                            else
-                            {
-                                // Subscriptions do not survive the reconnect: the session is opened
-                                // with CleanSession, so the broker discards them on disconnect.
-                                if (!string.IsNullOrEmpty(topic))
-                                {
-                                    await _client.SubscribeAsync(
-                                        new MqttTopicFilter
-                                        {
-                                            Topic = topic,
-                                            QualityOfServiceLevel = MqttQualityOfServiceLevel.AtMostOnce
-                                        }).ConfigureAwait(false);
-                                }
+                        return;
+                    }
 
-                                Log.Logger.Information("Reconnected to MQTT broker.");
+                    try
+                    {
+                        Log.Logger.Warning($"Disconnected from MQTT broker: {disconnectArgs.Reason}");
+
+                        // wait a 5 seconds, then simply reconnect again, if needed
+                        await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+
+                        if (!_client.IsConnected)
+                        {
+                            // Never let an exception escape this handler. MQTTnet invokes it on its
+                            // own dispatch loop, so a throw here is unobserved and would leave the
+                            // Commander offline until it is manually restarted.
+                            try
+                            {
+                                MqttClientConnectResult connectResult = await _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).ConfigureAwait(false);
+                                if (connectResult.ResultCode != MqttClientConnectResultCode.Success)
+                                {
+                                    string status = GetStatus(connectResult.UserProperties)?.ToString("x4");
+                                    Log.Logger.Error($"Reconnect to MQTT broker failed. Status: {connectResult.ResultCode}; status: {status}. Retrying.");
+                                }
+                                else
+                                {
+                                    // Subscriptions do not survive the reconnect: the session is opened
+                                    // with CleanSession, so the broker discards them on disconnect.
+                                    if (!string.IsNullOrEmpty(topic))
+                                    {
+                                        await _client.SubscribeAsync(
+                                            new MqttTopicFilter
+                                            {
+                                                Topic = topic,
+                                                QualityOfServiceLevel = MqttQualityOfServiceLevel.AtMostOnce
+                                            }).ConfigureAwait(false);
+                                    }
+
+                                    Log.Logger.Information("Reconnected to MQTT broker.");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Logger.Error($"Reconnect to MQTT broker failed: {ex.Message}. Retrying.");
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            Log.Logger.Error($"Reconnect to MQTT broker failed: {ex.Message}. Retrying.");
-                        }
+                    }
+                    finally
+                    {
+                        Interlocked.Exchange(ref _reconnecting, 0);
                     }
                 };
 
@@ -202,64 +223,75 @@
 
                 // Retry the initial connect. There is no init container gating startup on the
                 // broker, so on a host reboot the Commander regularly starts before Mosquitto is
-                // listening. A single failed attempt would leave the process running but offline:
-                // MQTTnet only raises DisconnectedAsync for a connection that was previously
-                // established, so nothing would drive the reconnect handler.
+                // listening, and a single failed attempt would leave the process running but
+                // offline.
+                //
+                // NOTE: MQTTnet 5 raises DisconnectedAsync for a FAILED connect attempt too, so the
+                // handler above also reacts to each failure here. It returns immediately while this
+                // loop owns the _reconnecting gate, which keeps exactly one attempt in flight.
                 int attempt = 0;
-                while (!_cancellationTokenSource.IsCancellationRequested)
+                Interlocked.Exchange(ref _reconnecting, 1);
+                try
                 {
-                    attempt++;
-                    try
+                    while (!_cancellationTokenSource.IsCancellationRequested)
                     {
-                        MqttClientConnectResult connectResult = await _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).ConfigureAwait(false);
-                        if (connectResult.ResultCode != MqttClientConnectResultCode.Success)
-                        {
-                            string status = GetStatus(connectResult.UserProperties)?.ToString("x4");
-                            throw new Exception($"Connection to MQTT broker failed. Status: {connectResult.ResultCode}; status: {status}");
-                        }
-
-                        if (!string.IsNullOrEmpty(topic))
-                        {
-                            MqttClientSubscribeResult subscribeResult = await _client.SubscribeAsync(
-                            new MqttTopicFilter
-                            {
-                                Topic = topic,
-                                QualityOfServiceLevel = MqttQualityOfServiceLevel.AtMostOnce
-                            }).ConfigureAwait(false);
-
-                            // make sure subscriptions were successful
-                            if (subscribeResult.Items.Count != 1 || subscribeResult.Items.ElementAt(0).ResultCode != MqttClientSubscribeResultCode.GrantedQoS0)
-                            {
-                                throw new ApplicationException("Failed to subscribe");
-                            }
-                        }
-
-                        Log.Logger.Information("Connected to MQTT broker.");
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        if (ex is MqttCommunicationException mqttEx && mqttEx.Data != null && mqttEx.Data.Count > 0)
-                        {
-                            foreach (var prop in mqttEx.Data)
-                            {
-                                Log.Logger.Error($"{prop.ToString()}");
-                            }
-                        }
-
-                        // Back off from 5s up to 60s so a broker that stays down does not fill the log.
-                        int delaySeconds = Math.Min(5 * attempt, 60);
-                        Log.Logger.Error($"Failed to connect to MQTT broker (attempt {attempt}): {ex.Message}. Retrying in {delaySeconds}s.");
-
+                        attempt++;
                         try
                         {
-                            await Task.Delay(TimeSpan.FromSeconds(delaySeconds), _cancellationTokenSource.Token).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
+                            MqttClientConnectResult connectResult = await _client.ConnectAsync(clientOptions.Build(), _cancellationTokenSource.Token).ConfigureAwait(false);
+                            if (connectResult.ResultCode != MqttClientConnectResultCode.Success)
+                            {
+                                string status = GetStatus(connectResult.UserProperties)?.ToString("x4");
+                                throw new Exception($"Connection to MQTT broker failed. Status: {connectResult.ResultCode}; status: {status}");
+                            }
+
+                            if (!string.IsNullOrEmpty(topic))
+                            {
+                                MqttClientSubscribeResult subscribeResult = await _client.SubscribeAsync(
+                                new MqttTopicFilter
+                                {
+                                    Topic = topic,
+                                    QualityOfServiceLevel = MqttQualityOfServiceLevel.AtMostOnce
+                                }).ConfigureAwait(false);
+
+                                // make sure subscriptions were successful
+                                if (subscribeResult.Items.Count != 1 || subscribeResult.Items.ElementAt(0).ResultCode != MqttClientSubscribeResultCode.GrantedQoS0)
+                                {
+                                    throw new ApplicationException("Failed to subscribe");
+                                }
+                            }
+
+                            Log.Logger.Information("Connected to MQTT broker.");
                             break;
                         }
+                        catch (Exception ex)
+                        {
+                            if (ex is MqttCommunicationException mqttEx && mqttEx.Data != null && mqttEx.Data.Count > 0)
+                            {
+                                foreach (var prop in mqttEx.Data)
+                                {
+                                    Log.Logger.Error($"{prop.ToString()}");
+                                }
+                            }
+
+                            // Back off from 5s up to 60s so a broker that stays down does not fill the log.
+                            int delaySeconds = Math.Min(5 * attempt, 60);
+                            Log.Logger.Error($"Failed to connect to MQTT broker (attempt {attempt}): {ex.Message}. Retrying in {delaySeconds}s.");
+
+                            try
+                            {
+                                await Task.Delay(TimeSpan.FromSeconds(delaySeconds), _cancellationTokenSource.Token).ConfigureAwait(false);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                break;
+                            }
+                        }
                     }
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _reconnecting, 0);
                 }
             }
             catch (Exception ex)
